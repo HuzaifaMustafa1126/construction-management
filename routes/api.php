@@ -18,4 +18,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/users', [UserController::class, 'store']);
 
+    Route::delete('/users/{id}', [UserController::class, 'destroy']);
+
 });

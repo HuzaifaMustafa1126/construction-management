@@ -66,4 +66,39 @@ class UserController extends Controller
             'user' => $user,
         ], 201);
     }
+
+
+    // DELETE /api/users/{id}
+public function destroy(Request $request, $id)
+{
+    // Only Admin can delete users
+    if ($request->user()->role !== 'admin') {
+        return response()->json([
+            'message' => 'Access denied. Only Admin can delete users.'
+        ], 403);
+    }
+
+    // Find user
+    $user = User::find($id);
+
+    if (!$user) {
+        return response()->json([
+            'message' => 'User not found.'
+        ], 404);
+    }
+
+    // Prevent deleting your own account
+    if ($request->user()->id === $user->id) {
+        return response()->json([
+            'message' => 'You cannot delete your own account.'
+        ], 403);
+    }
+
+    // Delete user
+    $user->delete();
+
+    return response()->json([
+        'message' => 'User deleted successfully.'
+    ], 200);
+}
 }
