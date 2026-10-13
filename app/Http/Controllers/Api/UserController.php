@@ -40,17 +40,22 @@ class UserController extends Controller
             'phone' => ['nullable', 'string', 'max:30'],
             'password' => [
                 'required',
-                Password::min(8)->letters()->numbers(),
+                Password::min(8),
             ],
             'role' => [
                 'required',
                 Rule::in(['admin', 'supervisor', 'client']),
             ],
+            'department' => [
+                     'nullable',
+                     'string',
+                     'max:100',
+             ],
         ]);
 
         $user = User::create([
             'name' => trim(
-                $validated['first_name'] . ' ' .
+                $validated['first_name'].' '.
                 $validated['last_name']
             ),
             'first_name' => $validated['first_name'],
@@ -59,46 +64,56 @@ class UserController extends Controller
             'phone' => $validated['phone'] ?? null,
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
+            'status' => 'Active',
+            'department' => $validated['department'] ?? null,
         ]);
 
         return response()->json([
-            'message' => 'User created successfully',
-            'user' => $user,
+            'message' => 'User created successfully.',
+            'user' => $user->only([
+                'id',
+                'first_name',
+                'last_name',
+                'email',
+                'phone',
+                'role',
+                'status',
+                'department',
+            ]),
         ], 201);
     }
 
-
     // DELETE /api/users/{id}
-public function destroy(Request $request, $id)
-{
-    // Only Admin can delete users
-    if ($request->user()->role !== 'admin') {
+    public function destroy(Request $request, $id)
+    {
+        // Only Admin can delete users
+        if ($request->user()->role !== 'admin') {
+            return response()->json([
+                'message' => 'Access denied. Only Admin can delete users.',
+            ], 403);
+        }
+
+        // Find user
+        $user = User::find($id);
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'User not found.',
+            ], 404);
+        }
+
+        // Prevent deleting your own account
+        if ($request->user()->id === $user->id) {
+            return response()->json([
+                'message' => 'You cannot delete your own account.',
+            ], 403);
+        }
+
+        // Delete user
+        $user->delete();
+
         return response()->json([
-            'message' => 'Access denied. Only Admin can delete users.'
-        ], 403);
+            'message' => 'User deleted successfully.',
+        ], 200);
     }
-
-    // Find user
-    $user = User::find($id);
-
-    if (!$user) {
-        return response()->json([
-            'message' => 'User not found.'
-        ], 404);
-    }
-
-    // Prevent deleting your own account
-    if ($request->user()->id === $user->id) {
-        return response()->json([
-            'message' => 'You cannot delete your own account.'
-        ], 403);
-    }
-
-    // Delete user
-    $user->delete();
-
-    return response()->json([
-        'message' => 'User deleted successfully.'
-    ], 200);
-}
 }

@@ -12,8 +12,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Keep existing middleware configuration here.
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+
+        // Always return JSON for API errors
+        $exceptions->shouldRenderJsonWhen(
+            function ($request, $exception) {
+                return $request->is('api/*')
+                    || $request->expectsJson();
+            }
+        );
+
     })->create();
