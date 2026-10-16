@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\V1\UserResource;
 use App\Models\User;
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -12,19 +14,21 @@ use Illuminate\Validation\Rules\Password;
 class UserController extends Controller
 {
     // GET /api/users
-    public function index(Request $request)
+    public function index(Request $request, TenantContext $tenantContext)
     {
         abort_unless($request->user()->role === 'admin', 403);
 
         return response()->json([
-            'users' => User::query()
+            'users' => UserResource::collection(User::query()
+                ->with('company:id,name,slug')
+                ->where('company_id', $tenantContext->companyId())
                 ->latest()
-                ->get(),
+                ->get()),
         ]);
     }
 
     // POST /api/users
-    public function store(Request $request)
+    public function store(Request $request, TenantContext $tenantContext)
     {
         abort_unless($request->user()->role === 'admin', 403);
 
@@ -47,13 +51,14 @@ class UserController extends Controller
                 Rule::in(['admin', 'supervisor', 'client']),
             ],
             'department' => [
-                     'nullable',
-                     'string',
-                     'max:100',
-             ],
+                'nullable',
+                'string',
+                'max:100',
+            ],
+            'company_id' => ['prohibited'],
         ]);
 
-        $user = User::create([
+        $user = new User([
             'name' => trim(
                 $validated['first_name'].' '.
                 $validated['last_name']
@@ -67,6 +72,8 @@ class UserController extends Controller
             'status' => 'Active',
             'department' => $validated['department'] ?? null,
         ]);
+        $user->company_id = $tenantContext->companyId();
+        $user->save();
 
         return response()->json([
             'message' => 'User created successfully.',
@@ -84,7 +91,7 @@ class UserController extends Controller
     }
 
     // DELETE /api/users/{id}
-    public function destroy(Request $request, $id)
+    public function destroy(Request $request, TenantContext $tenantContext, $id)
     {
         // Only Admin can delete users
         if ($request->user()->role !== 'admin') {
@@ -94,7 +101,9 @@ class UserController extends Controller
         }
 
         // Find user
-        $user = User::find($id);
+        $user = User::query()
+            ->where('company_id', $tenantContext->companyId())
+            ->find($id);
 
         if (! $user) {
             return response()->json([

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Company;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -41,7 +42,8 @@ class ApiAuthenticationTest extends TestCase
 
     public function test_admin_can_list_and_create_users_with_a_bearer_token(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $company = Company::factory()->create();
+        $admin = User::factory()->for($company)->create(['role' => 'admin']);
         $token = $admin->createToken('test')->plainTextToken;
 
         $this->withToken($token)->getJson('/api/users')
@@ -68,11 +70,16 @@ class ApiAuthenticationTest extends TestCase
                 'status' => 'Active',
             ],
         ])->assertJsonMissing(['password' => 'password123']);
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'example@gmail.com',
+            'company_id' => $company->id,
+        ]);
     }
 
     public function test_create_user_validation_errors_are_json_422(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = User::factory()->for(Company::factory())->create(['role' => 'admin']);
         $token = $admin->createToken('test')->plainTextToken;
 
         $this->withToken($token)->postJson('/api/users', [])
