@@ -48,7 +48,7 @@ class VersionedApiTest extends TestCase
             'email' => $user->email,
             'password' => 'incorrect-password',
         ])->assertUnauthorized()
-            ->assertExactJson(['message' => 'Invalid email or password.']);
+            ->assertExactJson(['message' => 'Invalid credentials or account unavailable.']);
     }
 
     public function test_invalid_login_payload_returns_validation_errors(): void
@@ -211,7 +211,14 @@ class VersionedApiTest extends TestCase
     {
         $company ??= Company::factory()->create();
 
-        return User::factory()->for($company)->create(array_merge(['role' => $role], $attributes));
+        $user = User::factory()->for($company)->create(array_merge(['role' => $role], $attributes));
+        $this->grantRole($user, match ($role) {
+            'admin' => 'company_admin',
+            'supervisor' => 'site_supervisor',
+            default => 'client',
+        });
+
+        return $user;
     }
 
     private function tokenFor(User $user): string

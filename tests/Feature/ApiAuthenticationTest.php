@@ -14,7 +14,7 @@ class ApiAuthenticationTest extends TestCase
 
     public function test_login_returns_a_sanctum_token(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->for(Company::factory())->create([
             'password' => Hash::make('password123'),
             'role' => 'admin',
         ]);
@@ -44,6 +44,7 @@ class ApiAuthenticationTest extends TestCase
     {
         $company = Company::factory()->create();
         $admin = User::factory()->for($company)->create(['role' => 'admin']);
+        $this->grantRole($admin, 'company_admin');
         $token = $admin->createToken('test')->plainTextToken;
 
         $this->withToken($token)->getJson('/api/users')
@@ -80,6 +81,7 @@ class ApiAuthenticationTest extends TestCase
     public function test_create_user_validation_errors_are_json_422(): void
     {
         $admin = User::factory()->for(Company::factory())->create(['role' => 'admin']);
+        $this->grantRole($admin, 'company_admin');
         $token = $admin->createToken('test')->plainTextToken;
 
         $this->withToken($token)->postJson('/api/users', [])

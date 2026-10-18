@@ -16,7 +16,9 @@ class UserController extends Controller
     // GET /api/users
     public function index(Request $request, TenantContext $tenantContext)
     {
-        abort_unless($request->user()->role === 'admin', 403);
+        if (! $request->user()->can('users.view')) {
+            return $this->forbidden();
+        }
 
         return response()->json([
             'users' => UserResource::collection(User::query()
@@ -30,7 +32,9 @@ class UserController extends Controller
     // POST /api/users
     public function store(Request $request, TenantContext $tenantContext)
     {
-        abort_unless($request->user()->role === 'admin', 403);
+        if (! $request->user()->can('users.create')) {
+            return $this->forbidden();
+        }
 
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:100'],
@@ -93,11 +97,8 @@ class UserController extends Controller
     // DELETE /api/users/{id}
     public function destroy(Request $request, TenantContext $tenantContext, $id)
     {
-        // Only Admin can delete users
-        if ($request->user()->role !== 'admin') {
-            return response()->json([
-                'message' => 'Access denied. Only Admin can delete users.',
-            ], 403);
+        if (! $request->user()->can('users.delete')) {
+            return $this->forbidden();
         }
 
         // Find user
@@ -124,5 +125,12 @@ class UserController extends Controller
         return response()->json([
             'message' => 'User deleted successfully.',
         ], 200);
+    }
+
+    private function forbidden()
+    {
+        return response()->json([
+            'message' => 'You do not have permission to perform this action.',
+        ], 403);
     }
 }

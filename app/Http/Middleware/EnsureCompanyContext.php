@@ -36,10 +36,14 @@ class EnsureCompanyContext
         }
 
         $this->tenantContext->establish($company);
+        setPermissionsTeamId($company->getKey());
+        $user->unsetRelation('roles')->unsetRelation('permissions');
 
         try {
             return $next($request);
         } finally {
+            setPermissionsTeamId(null);
+            $user->unsetRelation('roles')->unsetRelation('permissions');
             $this->tenantContext->clear();
         }
     }

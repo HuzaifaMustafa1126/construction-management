@@ -51,4 +51,9 @@ class Company extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    public function isOperational(): bool
+    {
+        return ! $this->trashed() && $this->status === self::STATUS_ACTIVE;
+    }
 }

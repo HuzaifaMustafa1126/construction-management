@@ -39,6 +39,8 @@ class TenantIsolationTest extends TestCase
         $this->companyB = Company::factory()->create(['name' => 'Company B']);
         $this->adminA = User::factory()->for($this->companyA)->create(['role' => 'admin']);
         $this->adminB = User::factory()->for($this->companyB)->create(['role' => 'admin']);
+        $this->grantRole($this->adminA, 'company_admin');
+        $this->grantRole($this->adminB, 'company_admin');
     }
 
     public function test_each_company_admin_lists_only_their_own_company_users(): void
@@ -149,6 +151,7 @@ class TenantIsolationTest extends TestCase
     {
         foreach (['supervisor', 'client'] as $role) {
             $user = User::factory()->for($this->companyA)->create(['role' => $role]);
+            $this->grantRole($user, $role === 'supervisor' ? 'site_supervisor' : 'client');
             $token = $this->tokenFor($user);
 
             $this->withToken($token)->getJson('/api/v1/users')->assertForbidden();

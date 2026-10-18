@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAccountAccess;
 use App\Http\Middleware\EnsureCompanyContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -14,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
+            'account.access' => EnsureAccountAccess::class,
             'company.context' => EnsureCompanyContext::class,
         ]);
     })

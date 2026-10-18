@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PermissionController;
+use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\UserRoleController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -17,13 +20,19 @@ Route::prefix('v1')->group(function () {
         ->middleware('throttle:5,1');
 
     Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
 
-        Route::middleware('company.context')->group(function () {
-            Route::get('/users', [UserController::class, 'index']);
-            Route::post('/users', [UserController::class, 'store']);
-            Route::delete('/users/{id}', [UserController::class, 'destroy']);
+        Route::middleware('account.access')->group(function () {
+            Route::get('/me', [AuthController::class, 'me']);
+
+            Route::middleware('company.context')->group(function () {
+                Route::get('/users', [UserController::class, 'index']);
+                Route::post('/users', [UserController::class, 'store']);
+                Route::delete('/users/{id}', [UserController::class, 'destroy']);
+                Route::put('/users/{id}/roles', [UserRoleController::class, 'update']);
+                Route::get('/permissions', [PermissionController::class, 'index']);
+                Route::apiResource('roles', RoleController::class)->except(['edit']);
+            });
         });
     });
 });
@@ -33,12 +42,15 @@ Route::post('/login', [AuthController::class, 'login'])
     ->middleware('throttle:5,1');
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    Route::middleware('company.context')->group(function () {
-        Route::get('/users', [UserController::class, 'index']);
-        Route::post('/users', [UserController::class, 'store']);
-        Route::delete('/users/{id}', [UserController::class, 'destroy']);
+    Route::middleware('account.access')->group(function () {
+        Route::get('/user', [AuthController::class, 'me']);
+
+        Route::middleware('company.context')->group(function () {
+            Route::get('/users', [UserController::class, 'index']);
+            Route::post('/users', [UserController::class, 'store']);
+            Route::delete('/users/{id}', [UserController::class, 'destroy']);
+        });
     });
 });

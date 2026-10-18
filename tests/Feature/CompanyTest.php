@@ -122,6 +122,7 @@ class CompanyTest extends TestCase
     {
         $adminCompany = Company::factory()->create();
         $admin = User::factory()->for($adminCompany)->create(['role' => 'admin']);
+        $this->grantRole($admin, 'company_admin');
         $otherCompany = Company::factory()->create();
         $token = $admin->createToken('test')->plainTextToken;
 
