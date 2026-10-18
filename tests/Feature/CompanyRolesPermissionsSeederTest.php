@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Support\Authorization\PermissionCatalog;
 use Database\Seeders\CompanyRolesPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
@@ -55,7 +56,9 @@ class CompanyRolesPermissionsSeederTest extends TestCase
         $admin = Role::query()->where('company_id', 1)->where('name', 'company_admin')->firstOrFail();
         $this->assertTrue($admin->hasPermissionTo('departments.assign'));
         $this->assertTrue($admin->hasPermissionTo('departments.delete'));
-        $this->assertDatabaseCount('permissions', 42);
+        $this->assertTrue($admin->hasPermissionTo('projects.assign'));
+        $this->assertTrue($admin->hasPermissionTo('projects.budget.view'));
+        $this->assertDatabaseCount('permissions', count(PermissionCatalog::all()) + 1);
         setPermissionsTeamId(null);
     }
 }

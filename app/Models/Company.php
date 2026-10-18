@@ -60,6 +60,11 @@ class Company extends Model
         return $this->hasMany(Department::class);
     }
 
+    public function projects(): HasMany
+    {
+        return $this->hasMany(Project::class);
+    }
+
     public function isOperational(): bool
     {
         return ! $this->trashed() && $this->status === self::STATUS_ACTIVE;

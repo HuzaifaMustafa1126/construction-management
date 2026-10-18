@@ -6,7 +6,7 @@ final class PermissionCatalog
 {
     public const GROUPS = [
         'dashboard' => ['dashboard.view'],
-        'projects' => ['projects.view', 'projects.create', 'projects.update', 'projects.delete'],
+        'projects' => ['projects.view', 'projects.create', 'projects.update', 'projects.delete', 'projects.assign', 'projects.budget.view'],
         'site_reports' => ['site_reports.view', 'site_reports.create', 'site_reports.update', 'site_reports.delete', 'site_reports.approve'],
         'site_photos' => ['site_photos.view', 'site_photos.upload', 'site_photos.delete'],
         'materials' => ['materials.view', 'materials.create', 'materials.update', 'materials.delete'],
