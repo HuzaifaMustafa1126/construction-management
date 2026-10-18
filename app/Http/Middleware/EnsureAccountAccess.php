@@ -18,7 +18,7 @@ class EnsureAccountAccess
             return $this->denied('Unauthenticated.', Response::HTTP_UNAUTHORIZED);
         }
 
-        if (! $user->isActive()) {
+        if ($user->trashed() || ! $user->isActive()) {
             return $this->denied('Account access is unavailable.');
         }
 

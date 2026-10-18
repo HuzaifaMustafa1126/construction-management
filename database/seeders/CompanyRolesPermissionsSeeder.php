@@ -42,7 +42,7 @@ class CompanyRolesPermissionsSeeder extends Seeder
                         'guard_name' => 'web',
                     ]);
 
-                    $role->syncPermissions(
+                    $role->givePermissionTo(
                         $permissions->only(PermissionCatalog::forRole($roleName))->values(),
                     );
                 }

@@ -16,6 +16,7 @@ final class PermissionCatalog
         'users' => ['users.view', 'users.create', 'users.update', 'users.delete'],
         'roles' => ['roles.view', 'roles.create', 'roles.update', 'roles.delete', 'roles.assign'],
         'company' => ['company.view', 'company.update'],
+        'departments' => ['departments.view', 'departments.create', 'departments.update', 'departments.delete', 'departments.assign'],
     ];
 
     public const ROLE_PERMISSIONS = [
@@ -27,6 +28,7 @@ final class PermissionCatalog
             'materials.view', 'materials.create', 'materials.update',
             'labor.view', 'labor.manage',
             'expenses.view', 'expenses.create',
+            'departments.view',
         ],
         'client' => [
             'dashboard.view', 'projects.view', 'site_reports.view',

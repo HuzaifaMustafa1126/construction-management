@@ -20,12 +20,21 @@ abstract class TestCase extends BaseTestCase
             Permission::findOrCreate($permission, 'web');
         }
 
+        foreach (array_keys(PermissionCatalog::ROLE_PERMISSIONS) as $defaultRole) {
+            $candidate = Role::query()->firstOrCreate([
+                'company_id' => $companyId,
+                'name' => $defaultRole,
+                'guard_name' => 'web',
+            ]);
+            $candidate->syncPermissions(PermissionCatalog::forRole($defaultRole));
+        }
+
         $role = Role::query()->firstOrCreate([
-            'company_id' => $companyId,
-            'name' => $roleName,
-            'guard_name' => 'web',
+            'company_id' => $companyId, 'name' => $roleName, 'guard_name' => 'web',
         ]);
-        $role->syncPermissions(PermissionCatalog::forRole($roleName));
+        if (array_key_exists($roleName, PermissionCatalog::ROLE_PERMISSIONS)) {
+            $role->syncPermissions(PermissionCatalog::forRole($roleName));
+        }
         $user->unsetRelation('roles')->assignRole($role);
         $user->unsetRelation('roles');
         app(PermissionRegistrar::class)->forgetCachedPermissions();

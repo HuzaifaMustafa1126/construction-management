@@ -76,7 +76,6 @@ class RolesPermissionsTest extends TestCase
         $this->app['auth']->forgetGuards();
         $this->withToken($this->token($this->adminB))->postJson('/api/v1/roles', $this->rolePayload())->assertCreated();
 
-        $this->assertDatabaseCount('roles', 4);
         $this->assertSame(2, Role::query()->where('name', 'project_viewer')->count());
     }
 

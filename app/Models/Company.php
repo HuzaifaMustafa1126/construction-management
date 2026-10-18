@@ -31,7 +31,10 @@ class Company extends Model
         'phone',
         'address',
         'city',
+        'state',
         'country',
+        'postal_code',
+        'website',
         'currency',
         'timezone',
         'subscription_plan_id',
@@ -50,6 +53,11 @@ class Company extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    public function departments(): HasMany
+    {
+        return $this->hasMany(Department::class);
     }
 
     public function isOperational(): bool

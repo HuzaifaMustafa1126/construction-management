@@ -165,7 +165,7 @@ class VersionedApiTest extends TestCase
             ->assertOk()
             ->assertExactJson(['message' => 'User deleted successfully.']);
 
-        $this->assertDatabaseMissing('users', ['id' => $target->id]);
+        $this->assertSoftDeleted('users', ['id' => $target->id]);
     }
 
     public function test_admin_cannot_delete_their_own_account(): void
