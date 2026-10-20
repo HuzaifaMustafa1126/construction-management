@@ -9,7 +9,8 @@ final class PermissionCatalog
         'projects' => ['projects.view', 'projects.create', 'projects.update', 'projects.delete', 'projects.assign', 'projects.budget.view'],
         'site_reports' => ['site_reports.view', 'site_reports.create', 'site_reports.update', 'site_reports.delete', 'site_reports.approve'],
         'site_photos' => ['site_photos.view', 'site_photos.upload', 'site_photos.delete'],
-        'materials' => ['materials.view', 'materials.create', 'materials.update', 'materials.delete'],
+        'photos' => ['photos.view', 'photos.create', 'photos.update', 'photos.delete', 'photos.approve'],
+        'materials' => ['materials.view', 'materials.create', 'materials.update', 'materials.delete', 'material_categories.manage', 'measurement_units.manage'],
         'labor' => ['labor.view', 'labor.manage'],
         'expenses' => ['expenses.view', 'expenses.create', 'expenses.update', 'expenses.delete'],
         'payments' => ['payments.view', 'payments.manage'],
@@ -25,6 +26,7 @@ final class PermissionCatalog
             'dashboard.view', 'projects.view',
             'site_reports.view', 'site_reports.create', 'site_reports.update',
             'site_photos.view', 'site_photos.upload',
+            'photos.view', 'photos.create', 'photos.update',
             'materials.view', 'materials.create', 'materials.update',
             'labor.view', 'labor.manage',
             'expenses.view', 'expenses.create',
@@ -33,6 +35,7 @@ final class PermissionCatalog
         'client' => [
             'dashboard.view', 'projects.view', 'site_reports.view',
             'site_photos.view', 'payments.view',
+            'photos.view',
         ],
     ];
 

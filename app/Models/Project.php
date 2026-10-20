@@ -64,6 +64,11 @@ class Project extends Model
         return $this->hasMany(DailySiteReport::class);
     }
 
+    public function sitePhotos(): HasMany
+    {
+        return $this->hasMany(SitePhoto::class);
+    }
+
     public function scopeForCompany(Builder $query, int $companyId): Builder
     {
         return $query->where('company_id', $companyId);

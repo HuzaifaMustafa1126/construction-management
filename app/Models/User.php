@@ -69,6 +69,11 @@ class User extends Authenticatable
         return $this->hasMany(DailySiteReport::class, 'created_by');
     }
 
+    public function uploadedSitePhotos(): HasMany
+    {
+        return $this->hasMany(SitePhoto::class, 'uploaded_by');
+    }
+
     public function isActive(): bool
     {
         return $this->status === self::STATUS_ACTIVE;

@@ -70,6 +70,26 @@ class Company extends Model
         return $this->hasMany(DailySiteReport::class);
     }
 
+    public function sitePhotos(): HasMany
+    {
+        return $this->hasMany(SitePhoto::class);
+    }
+
+    public function materialCategories(): HasMany
+    {
+        return $this->hasMany(MaterialCategory::class);
+    }
+
+    public function materials(): HasMany
+    {
+        return $this->hasMany(Material::class);
+    }
+
+    public function customMeasurementUnits(): HasMany
+    {
+        return $this->hasMany(MeasurementUnit::class);
+    }
+
     public function isOperational(): bool
     {
         return ! $this->trashed() && $this->status === self::STATUS_ACTIVE;
