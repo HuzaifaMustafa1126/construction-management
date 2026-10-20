@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Project extends Model
@@ -56,6 +57,11 @@ class Project extends Model
         return $this->belongsToMany(User::class)->withPivot([
             'id', 'company_id', 'assignment_type', 'assigned_by', 'assigned_at',
         ])->withTimestamps();
+    }
+
+    public function dailySiteReports(): HasMany
+    {
+        return $this->hasMany(DailySiteReport::class);
     }
 
     public function scopeForCompany(Builder $query, int $companyId): Builder

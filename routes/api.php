@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CompanyController;
+use App\Http\Controllers\Api\DailySiteReportController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\ProfileController;
@@ -61,6 +62,14 @@ Route::prefix('v1')->group(function () {
                 Route::get('/projects/{id}/team', [ProjectTeamController::class, 'show']);
                 Route::put('/projects/{id}/team', [ProjectTeamController::class, 'update']);
                 Route::get('/projects/{id}/overview', [ProjectController::class, 'overview']);
+                Route::get('/projects/{id}/daily-reports', [DailySiteReportController::class, 'index']);
+                Route::post('/projects/{id}/daily-reports', [DailySiteReportController::class, 'store']);
+                Route::get('/projects/{id}/daily-reports/{reportId}', [DailySiteReportController::class, 'show']);
+                Route::match(['put', 'patch'], '/projects/{id}/daily-reports/{reportId}', [DailySiteReportController::class, 'update']);
+                Route::post('/projects/{id}/daily-reports/{reportId}/submit', [DailySiteReportController::class, 'submit']);
+                Route::post('/projects/{id}/daily-reports/{reportId}/review', [DailySiteReportController::class, 'review']);
+                Route::patch('/projects/{id}/daily-reports/{reportId}/visibility', [DailySiteReportController::class, 'visibility']);
+                Route::delete('/projects/{id}/daily-reports/{reportId}', [DailySiteReportController::class, 'destroy']);
                 Route::get('/permissions', [PermissionController::class, 'index']);
                 Route::apiResource('roles', RoleController::class)->except(['edit']);
             });

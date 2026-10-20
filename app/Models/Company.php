@@ -65,6 +65,11 @@ class Company extends Model
         return $this->hasMany(Project::class);
     }
 
+    public function dailySiteReports(): HasMany
+    {
+        return $this->hasMany(DailySiteReport::class);
+    }
+
     public function isOperational(): bool
     {
         return ! $this->trashed() && $this->status === self::STATUS_ACTIVE;
