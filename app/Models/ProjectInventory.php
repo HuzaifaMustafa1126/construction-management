@@ -44,6 +44,11 @@ class ProjectInventory extends Model
         return $this->hasMany(InventoryTransaction::class);
     }
 
+    public function deliveryItems(): HasMany
+    {
+        return $this->hasMany(MaterialDeliveryItem::class);
+    }
+
     public function scopeForCompany(Builder $query, int $companyId): Builder
     {
         return $query->where('company_id', $companyId);

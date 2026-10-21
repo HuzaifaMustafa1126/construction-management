@@ -79,6 +79,11 @@ class Project extends Model
         return $this->hasMany(InventoryTransaction::class);
     }
 
+    public function materialDeliveries(): HasMany
+    {
+        return $this->hasMany(MaterialDelivery::class);
+    }
+
     public function scopeForCompany(Builder $query, int $companyId): Builder
     {
         return $query->where('company_id', $companyId);

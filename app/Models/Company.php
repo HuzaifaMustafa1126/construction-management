@@ -100,6 +100,16 @@ class Company extends Model
         return $this->hasMany(InventoryTransaction::class);
     }
 
+    public function suppliers(): HasMany
+    {
+        return $this->hasMany(Supplier::class);
+    }
+
+    public function materialDeliveries(): HasMany
+    {
+        return $this->hasMany(MaterialDelivery::class);
+    }
+
     public function isOperational(): bool
     {
         return ! $this->trashed() && $this->status === self::STATUS_ACTIVE;

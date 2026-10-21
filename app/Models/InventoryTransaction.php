@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InventoryTransaction extends Model
 {
-    public const TYPES = ['opening_stock'];
+    public const TYPES = ['opening_stock', 'material_received'];
 
     public const DIRECTIONS = ['in', 'out'];
 
@@ -41,5 +41,10 @@ class InventoryTransaction extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function deliveryItem(): BelongsTo
+    {
+        return $this->belongsTo(MaterialDeliveryItem::class);
     }
 }
