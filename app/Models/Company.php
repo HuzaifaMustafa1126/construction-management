@@ -90,6 +90,16 @@ class Company extends Model
         return $this->hasMany(MeasurementUnit::class);
     }
 
+    public function projectInventories(): HasMany
+    {
+        return $this->hasMany(ProjectInventory::class);
+    }
+
+    public function inventoryTransactions(): HasMany
+    {
+        return $this->hasMany(InventoryTransaction::class);
+    }
+
     public function isOperational(): bool
     {
         return ! $this->trashed() && $this->status === self::STATUS_ACTIVE;

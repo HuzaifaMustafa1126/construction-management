@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Models\DailySiteReport;
 use App\Models\Project;
+use App\Models\ProjectInventory;
 use App\Models\SitePhoto;
 use App\Policies\DailySiteReportPolicy;
+use App\Policies\ProjectInventoryPolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\SitePhotoPolicy;
 use App\Support\Tenancy\TenantContext;
@@ -28,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(Project::class, ProjectPolicy::class);
+        Gate::policy(ProjectInventory::class, ProjectInventoryPolicy::class);
         Gate::policy(DailySiteReport::class, DailySiteReportPolicy::class);
         Gate::policy(SitePhoto::class, SitePhotoPolicy::class);
     }

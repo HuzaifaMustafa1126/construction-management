@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Material extends Model
@@ -36,6 +37,16 @@ class Material extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function projectInventories(): HasMany
+    {
+        return $this->hasMany(ProjectInventory::class);
+    }
+
+    public function inventoryTransactions(): HasMany
+    {
+        return $this->hasMany(InventoryTransaction::class);
     }
 
     public function scopeForCompany(Builder $query, int $companyId): Builder

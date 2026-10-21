@@ -69,6 +69,16 @@ class Project extends Model
         return $this->hasMany(SitePhoto::class);
     }
 
+    public function inventories(): HasMany
+    {
+        return $this->hasMany(ProjectInventory::class);
+    }
+
+    public function inventoryTransactions(): HasMany
+    {
+        return $this->hasMany(InventoryTransaction::class);
+    }
+
     public function scopeForCompany(Builder $query, int $companyId): Builder
     {
         return $query->where('company_id', $companyId);
