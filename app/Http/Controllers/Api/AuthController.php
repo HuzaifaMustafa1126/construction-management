@@ -28,7 +28,15 @@ class AuthController extends Controller
             ? Company::query()->find($user->company_id)
             : null;
 
-        if (! $user->isActive() || ! $company?->isOperational()) {
+        if (! $user->isActive() || ! $company) {
+            return $this->loginDenied();
+        }
+
+        if ($company->email_verification_required && ! $user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Email verification is required before login.'], 403);
+        }
+
+        if (! $company->isOperational()) {
             return $this->loginDenied();
         }
 

@@ -17,6 +17,12 @@ class Company extends Model
 
     public const STATUS_SUSPENDED = 'suspended';
 
+    public const STATUS_PENDING_VERIFICATION = 'pending_verification';
+
+    public const ONBOARDING_PENDING_VERIFICATION = 'pending_verification';
+
+    public const ONBOARDING_COMPLETE = 'complete';
+
     public const SUBSCRIPTION_STATUS_TRIAL = 'trial';
 
     public const SUBSCRIPTION_STATUS_ACTIVE = 'active';
@@ -41,12 +47,15 @@ class Company extends Model
         'subscription_status',
         'trial_ends_at',
         'status',
+        'onboarding_status',
+        'email_verification_required',
     ];
 
     protected function casts(): array
     {
         return [
             'trial_ends_at' => 'datetime',
+            'email_verification_required' => 'boolean',
         ];
     }
 

@@ -2,11 +2,15 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CompanyController;
+use App\Http\Controllers\Api\CompanyRegistrationController;
 use App\Http\Controllers\Api\DailySiteReportController;
 use App\Http\Controllers\Api\DepartmentController;
+use App\Http\Controllers\Api\InventoryReportController;
 use App\Http\Controllers\Api\MaterialCategoryController;
+use App\Http\Controllers\Api\MaterialConsumptionController;
 use App\Http\Controllers\Api\MaterialController;
 use App\Http\Controllers\Api\MaterialDeliveryController;
+use App\Http\Controllers\Api\MaterialStockAdjustmentController;
 use App\Http\Controllers\Api\MeasurementUnitController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\ProfileController;
@@ -32,6 +36,9 @@ Route::prefix('v1')->group(function () {
 
     Route::post('/login', [AuthController::class, 'login'])
         ->middleware('throttle:5,1');
+    Route::post('/register-company', [CompanyRegistrationController::class, 'register'])->middleware('throttle:company-registration');
+    Route::get('/verify-email/{id}/{hash}', [CompanyRegistrationController::class, 'verify'])->middleware('throttle:company-verification')->name('verification.verify');
+    Route::post('/resend-verification', [CompanyRegistrationController::class, 'resend'])->middleware('throttle:company-verification-resend');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
@@ -76,12 +83,34 @@ Route::prefix('v1')->group(function () {
                 Route::patch('/projects/{id}/inventory/{inventoryId}', [ProjectInventoryController::class, 'update']);
                 Route::post('/projects/{id}/inventory/{inventoryId}/opening-stock', [ProjectInventoryController::class, 'openingStock']);
                 Route::get('/projects/{id}/inventory/{inventoryId}/transactions', [ProjectInventoryController::class, 'transactions']);
+                Route::get('/projects/{id}/inventory-reports/overview', [InventoryReportController::class, 'overview']);
+                Route::get('/projects/{id}/inventory-reports/current-stock', [InventoryReportController::class, 'currentStock']);
+                Route::get('/projects/{id}/inventory-reports/alerts', [InventoryReportController::class, 'alerts']);
+                Route::get('/projects/{id}/inventory-reports/movements', [InventoryReportController::class, 'movements']);
+                Route::get('/projects/{id}/inventory-reports/received-vs-consumed', [InventoryReportController::class, 'receivedVsConsumed']);
+                Route::get('/projects/{id}/inventory-reports/wastage', [InventoryReportController::class, 'wastage']);
                 Route::get('/projects/{id}/material-deliveries', [MaterialDeliveryController::class, 'index']);
                 Route::post('/projects/{id}/material-deliveries', [MaterialDeliveryController::class, 'store']);
                 Route::get('/projects/{id}/material-deliveries/{deliveryId}', [MaterialDeliveryController::class, 'show']);
                 Route::patch('/projects/{id}/material-deliveries/{deliveryId}', [MaterialDeliveryController::class, 'update']);
                 Route::post('/projects/{id}/material-deliveries/{deliveryId}/receive', [MaterialDeliveryController::class, 'receive']);
                 Route::post('/projects/{id}/material-deliveries/{deliveryId}/cancel', [MaterialDeliveryController::class, 'cancel']);
+                Route::get('/projects/{id}/material-consumptions/summary', [MaterialConsumptionController::class, 'summary']);
+                Route::get('/projects/{id}/material-consumptions', [MaterialConsumptionController::class, 'index']);
+                Route::post('/projects/{id}/material-consumptions', [MaterialConsumptionController::class, 'store']);
+                Route::get('/projects/{id}/material-consumptions/{consumptionId}', [MaterialConsumptionController::class, 'show']);
+                Route::patch('/projects/{id}/material-consumptions/{consumptionId}', [MaterialConsumptionController::class, 'update']);
+                Route::post('/projects/{id}/material-consumptions/{consumptionId}/post', [MaterialConsumptionController::class, 'post']);
+                Route::post('/projects/{id}/material-consumptions/{consumptionId}/cancel', [MaterialConsumptionController::class, 'cancel']);
+                Route::get('/projects/{id}/material-consumptions/{consumptionId}/transactions', [MaterialConsumptionController::class, 'transactions']);
+                Route::get('/projects/{id}/stock-adjustments/history', [MaterialStockAdjustmentController::class, 'history']);
+                Route::get('/projects/{id}/stock-adjustments/summary', [MaterialStockAdjustmentController::class, 'summary']);
+                Route::get('/projects/{id}/stock-adjustments', [MaterialStockAdjustmentController::class, 'index']);
+                Route::post('/projects/{id}/stock-adjustments', [MaterialStockAdjustmentController::class, 'store']);
+                Route::get('/projects/{id}/stock-adjustments/{adjustmentId}', [MaterialStockAdjustmentController::class, 'show']);
+                Route::match(['put', 'patch'], '/projects/{id}/stock-adjustments/{adjustmentId}', [MaterialStockAdjustmentController::class, 'update']);
+                Route::post('/projects/{id}/stock-adjustments/{adjustmentId}/post', [MaterialStockAdjustmentController::class, 'post']);
+                Route::post('/projects/{id}/stock-adjustments/{adjustmentId}/cancel', [MaterialStockAdjustmentController::class, 'cancel']);
                 Route::get('/projects/{id}/daily-reports', [DailySiteReportController::class, 'index']);
                 Route::post('/projects/{id}/daily-reports', [DailySiteReportController::class, 'store']);
                 Route::get('/projects/{id}/daily-reports/{reportId}', [DailySiteReportController::class, 'show']);
@@ -124,6 +153,9 @@ Route::prefix('v1')->group(function () {
                 Route::match(['put', 'patch'], '/suppliers/{id}', [SupplierController::class, 'update']);
                 Route::patch('/suppliers/{id}/status', [SupplierController::class, 'status']);
                 Route::delete('/suppliers/{id}', [SupplierController::class, 'destroy']);
+                Route::get('/inventory-reports/overview', [InventoryReportController::class, 'companyOverview']);
+                Route::get('/inventory-reports/projects', [InventoryReportController::class, 'companyProjects']);
+                Route::get('/inventory-reports/alerts', [InventoryReportController::class, 'companyAlerts']);
                 Route::apiResource('roles', RoleController::class)->except(['edit']);
             });
         });

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InventoryTransaction extends Model
 {
-    public const TYPES = ['opening_stock', 'material_received'];
+    public const TYPES = ['opening_stock', 'material_received', 'material_consumed', 'adjustment_in', 'adjustment_out', 'material_wastage', 'inventory_correction_in', 'inventory_correction_out'];
 
     public const DIRECTIONS = ['in', 'out'];
 
@@ -46,5 +46,15 @@ class InventoryTransaction extends Model
     public function deliveryItem(): BelongsTo
     {
         return $this->belongsTo(MaterialDeliveryItem::class);
+    }
+
+    public function consumptionItem(): BelongsTo
+    {
+        return $this->belongsTo(MaterialConsumptionItem::class);
+    }
+
+    public function stockAdjustmentItem(): BelongsTo
+    {
+        return $this->belongsTo(MaterialStockAdjustmentItem::class);
     }
 }
