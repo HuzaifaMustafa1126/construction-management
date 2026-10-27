@@ -1,14 +1,278 @@
-import { useMemo,useState } from "react";
-import { useMutation,useQuery,useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "react-toastify";
-import { apiMessage,applyServerErrors,departmentsApi } from "../../../api/endpoints";
-import { useAuth,useCompany } from "../../auth/context/AuthContext";
-import { AppBadge,AppButton,AppInput,AppModal,AppSelect,ConfirmDialog,PageHeader } from "../../../components/ui/AppUI";
-import { AppAlert,FilterBar } from "../../../components/ui/Controls";
+import {
+  apiMessage,
+  applyServerErrors,
+  departmentsApi,
+} from "../../../api/endpoints";
+import { useAuth, useCompany } from "../../auth/context/AuthContext";
+import {
+  AppBadge,
+  AppButton,
+  AppInput,
+  AppModal,
+  AppSelect,
+  ConfirmDialog,
+  PageHeader,
+} from "../../../components/ui/AppUI";
+import { AppAlert, FilterBar } from "../../../components/ui/Controls";
 import { DataTable } from "../../../components/tables/DataTable";
-const schema=z.object({name:z.string().min(1).max(125),code:z.string().regex(/^[A-Za-z0-9_-]+$/).max(50),description:z.string().max(2000).optional()});
-const nameOf=u=>u?.name||[u?.first_name,u?.last_name].filter(Boolean).join(" ");
-export default function DepartmentsPage(){const{can}=useAuth();const{company}=useCompany();const qc=useQueryClient();const[params,setParams]=useState({page:1,per_page:15,search:"",status:""}),[modal,setModal]=useState(null),[deleting,setDeleting]=useState(null),[viewing,setViewing]=useState(null),[problem,setProblem]=useState("");const form=useForm({resolver:zodResolver(schema)});const key=["company",company?.id,"departments",params];const query=useQuery({queryKey:key,queryFn:()=>departmentsApi.list(Object.fromEntries(Object.entries(params).filter(([,v])=>v!==""))),enabled:!!company});const members=useQuery({queryKey:["company",company?.id,"department-users",viewing?.id],queryFn:()=>departmentsApi.users(viewing.id,{per_page:100}),enabled:!!viewing});const invalidate=()=>qc.invalidateQueries({queryKey:["company",company?.id,"departments"]});const remove=useMutation({mutationFn:id=>departmentsApi.remove(id),onSuccess:()=>{setDeleting(null);invalidate();toast.success("Department deleted.")},onError:e=>setProblem(apiMessage(e))});const status=useMutation({mutationFn:({id,value})=>departmentsApi.status(id,value),onSuccess:()=>{invalidate();toast.success("Department status updated.")},onError:e=>setProblem(apiMessage(e))});const rows=query.data?.data||[];const columns=useMemo(()=>[{accessorKey:"name",header:"Department"},{accessorKey:"code",header:"Code"},{accessorKey:"description",header:"Description"},{accessorKey:"employee_count",header:"Users"},{accessorKey:"status",header:"Status",cell:({getValue})=><AppBadge tone={getValue()==="Active"?"success":"warning"}>{getValue()}</AppBadge>}],[]);const open=d=>{setModal(d||{});form.reset({name:d?.name||"",code:d?.code||"",description:d?.description||""})};const save=form.handleSubmit(async values=>{setProblem("");try{modal.id?await departmentsApi.update(modal.id,values):await departmentsApi.create(values);setModal(null);await invalidate();toast.success("Department saved.")}catch(error){applyServerErrors(error,form.setError);setProblem(apiMessage(error))}});return <><PageHeader title="Departments" description="Manage company departments and assignments." action={can("departments.create")?<AppButton onClick={()=>open()}>Add department</AppButton>:null}/>{problem&&<AppAlert tone="danger">{problem}</AppAlert>}<FilterBar><AppInput label="Search" value={params.search} onChange={e=>setParams({...params,page:1,search:e.target.value})}/><AppSelect label="Status" value={params.status} onChange={e=>setParams({...params,page:1,status:e.target.value})}><option value="">All statuses</option><option>Active</option><option>Inactive</option></AppSelect><AppButton variant="secondary" onClick={()=>query.refetch()}>Refresh</AppButton></FilterBar><DataTable columns={columns} data={rows} loading={query.isLoading} searchable={false} actions={d=><div className="table-actions"><AppButton variant="ghost" onClick={()=>setViewing(d)}>View users</AppButton>{can("departments.update")&&<><AppButton variant="ghost" onClick={()=>open(d)}>Edit</AppButton><AppButton variant="ghost" onClick={()=>status.mutate({id:d.id,value:d.status==="Active"?"Inactive":"Active"})}>{d.status==="Active"?"Deactivate":"Activate"}</AppButton></>}{can("departments.delete")&&<AppButton variant="danger" onClick={()=>setDeleting(d)}>Delete</AppButton>}</div>}/><footer className="table-pagination"><span>Page {query.data?.meta?.current_page||1} of {query.data?.meta?.last_page||1}</span><div><AppButton variant="secondary" disabled={params.page<=1} onClick={()=>setParams({...params,page:params.page-1})}>Previous</AppButton><AppButton variant="secondary" disabled={params.page>=(query.data?.meta?.last_page||1)} onClick={()=>setParams({...params,page:params.page+1})}>Next</AppButton></div></footer><AppModal open={!!modal} title={modal?.id?"Edit department":"Add department"} onClose={()=>setModal(null)}><form className="form-grid" onSubmit={save}><AppInput label="Name" error={form.formState.errors.name?.message}{...form.register("name")}/><AppInput label="Code" error={form.formState.errors.code?.message}{...form.register("code")}/><AppInput label="Description" error={form.formState.errors.description?.message}{...form.register("description")}/><div className="modal-actions full"><AppButton type="button" variant="secondary" onClick={()=>setModal(null)}>Cancel</AppButton><AppButton busy={form.formState.isSubmitting}>Save</AppButton></div></form></AppModal><AppModal open={!!viewing} title={`${viewing?.name||"Department"} users`} onClose={()=>setViewing(null)}>{members.isLoading?<p>Loading users…</p>:members.data?.users?.length?<ul>{members.data.users.map(u=><li key={u.id}>{nameOf(u)} — {u.email}</li>)}</ul>:<p>No assigned users.</p>}</AppModal><ConfirmDialog open={!!deleting} title="Delete department" message={`Delete ${deleting?.name}? Existing assignments remain historical.`} busy={remove.isPending} onClose={()=>setDeleting(null)} onConfirm={()=>remove.mutate(deleting.id)}/></>}
+const schema = z.object({
+  name: z.string().min(1).max(125),
+  code: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]+$/)
+    .max(50),
+  description: z.string().max(2000).optional(),
+});
+const nameOf = (u) =>
+  u?.name || [u?.first_name, u?.last_name].filter(Boolean).join(" ");
+export default function DepartmentsPage() {
+  const { can } = useAuth();
+  const { company } = useCompany();
+  const qc = useQueryClient();
+  const [params, setParams] = useState({
+      page: 1,
+      per_page: 15,
+      search: "",
+      status: "",
+    }),
+    [modal, setModal] = useState(null),
+    [deleting, setDeleting] = useState(null),
+    [viewing, setViewing] = useState(null),
+    [problem, setProblem] = useState("");
+  const form = useForm({ resolver: zodResolver(schema) });
+  const key = ["company", company?.id, "departments", params];
+  const query = useQuery({
+    queryKey: key,
+    queryFn: () =>
+      departmentsApi.list(
+        Object.fromEntries(Object.entries(params).filter(([, v]) => v !== "")),
+      ),
+    enabled: !!company,
+  });
+  const members = useQuery({
+    queryKey: ["company", company?.id, "department-users", viewing?.id],
+    queryFn: () => departmentsApi.users(viewing.id, { per_page: 100 }),
+    enabled: !!viewing,
+  });
+  const invalidate = () =>
+    qc.invalidateQueries({ queryKey: ["company", company?.id, "departments"] });
+  const remove = useMutation({
+    mutationFn: (id) => departmentsApi.remove(id),
+    onSuccess: () => {
+      setDeleting(null);
+      invalidate();
+      toast.success("Department deleted.");
+    },
+    onError: (e) => setProblem(apiMessage(e)),
+  });
+  const status = useMutation({
+    mutationFn: ({ id, value }) => departmentsApi.status(id, value),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Department status updated.");
+    },
+    onError: (e) => setProblem(apiMessage(e)),
+  });
+  const rows = query.data?.data || [];
+  const columns = useMemo(
+    () => [
+      { accessorKey: "name", header: "Department" },
+      { accessorKey: "code", header: "Code" },
+      { accessorKey: "description", header: "Description" },
+      { accessorKey: "employee_count", header: "Users" },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ getValue }) => (
+          <AppBadge tone={getValue() === "Active" ? "success" : "warning"}>
+            {getValue()}
+          </AppBadge>
+        ),
+      },
+    ],
+    [],
+  );
+  const open = (d) => {
+    setModal(d || {});
+    form.reset({
+      name: d?.name || "",
+      code: d?.code || "",
+      description: d?.description || "",
+    });
+  };
+  const save = form.handleSubmit(async (values) => {
+    setProblem("");
+    try {
+      modal.id
+        ? await departmentsApi.update(modal.id, values)
+        : await departmentsApi.create(values);
+      setModal(null);
+      await invalidate();
+      toast.success("Department saved.");
+    } catch (error) {
+      applyServerErrors(error, form.setError);
+      setProblem(apiMessage(error));
+    }
+  });
+  return (
+    <>
+      <PageHeader
+        title="Departments"
+        description="Manage company departments and assignments."
+        action={
+          can("departments.create") ? (
+            <AppButton onClick={() => open()}>Add department</AppButton>
+          ) : null
+        }
+      />
+      {problem && <AppAlert tone="danger">{problem}</AppAlert>}
+      <FilterBar>
+        <AppInput
+          label="Search"
+          value={params.search}
+          onChange={(e) =>
+            setParams({ ...params, page: 1, search: e.target.value })
+          }
+        />
+        <AppSelect
+          label="Status"
+          value={params.status}
+          onChange={(e) =>
+            setParams({ ...params, page: 1, status: e.target.value })
+          }
+        >
+          <option value="">All statuses</option>
+          <option>Active</option>
+          <option>Inactive</option>
+        </AppSelect>
+        <AppButton variant="secondary" onClick={() => query.refetch()}>
+          Refresh
+        </AppButton>
+      </FilterBar>
+      <DataTable
+        columns={columns}
+        data={rows}
+        loading={query.isLoading}
+        searchable={false}
+        actions={(d) => (
+          <div className="table-actions">
+            <AppButton variant="ghost" onClick={() => setViewing(d)}>
+              View users
+            </AppButton>
+            {can("departments.update") && (
+              <>
+                <AppButton variant="ghost" onClick={() => open(d)}>
+                  Edit
+                </AppButton>
+                <AppButton
+                  variant="ghost"
+                  onClick={() =>
+                    status.mutate({
+                      id: d.id,
+                      value: d.status === "Active" ? "Inactive" : "Active",
+                    })
+                  }
+                >
+                  {d.status === "Active" ? "Deactivate" : "Activate"}
+                </AppButton>
+              </>
+            )}
+            {can("departments.delete") && (
+              <AppButton variant="danger" onClick={() => setDeleting(d)}>
+                Delete
+              </AppButton>
+            )}
+          </div>
+        )}
+      />
+      <footer className="table-pagination">
+        <span>
+          Page {query.data?.meta?.current_page || 1} of{" "}
+          {query.data?.meta?.last_page || 1}
+        </span>
+        <div>
+          <AppButton
+            variant="secondary"
+            disabled={params.page <= 1}
+            onClick={() => setParams({ ...params, page: params.page - 1 })}
+          >
+            Previous
+          </AppButton>
+          <AppButton
+            variant="secondary"
+            disabled={params.page >= (query.data?.meta?.last_page || 1)}
+            onClick={() => setParams({ ...params, page: params.page + 1 })}
+          >
+            Next
+          </AppButton>
+        </div>
+      </footer>
+      <AppModal
+        open={!!modal}
+        title={modal?.id ? "Edit department" : "Add department"}
+        onClose={() => setModal(null)}
+      >
+        <form className="form-grid" onSubmit={save}>
+          <AppInput
+            label="Name"
+            error={form.formState.errors.name?.message}
+            {...form.register("name")}
+          />
+          <AppInput
+            label="Code"
+            error={form.formState.errors.code?.message}
+            {...form.register("code")}
+          />
+          <AppInput
+            label="Description"
+            error={form.formState.errors.description?.message}
+            {...form.register("description")}
+          />
+          <div className="modal-actions full">
+            <AppButton
+              type="button"
+              variant="secondary"
+              onClick={() => setModal(null)}
+            >
+              Cancel
+            </AppButton>
+            <AppButton busy={form.formState.isSubmitting}>Save</AppButton>
+          </div>
+        </form>
+      </AppModal>
+      <AppModal
+        open={!!viewing}
+        title={`${viewing?.name || "Department"} users`}
+        onClose={() => setViewing(null)}
+      >
+        {members.isLoading ? (
+          <p>Loading users…</p>
+        ) : members.data?.users?.length ? (
+          <ul>
+            {members.data.users.map((u) => (
+              <li key={u.id}>
+                {nameOf(u)} — {u.email}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No assigned users.</p>
+        )}
+      </AppModal>
+      <ConfirmDialog
+        open={!!deleting}
+        title="Delete department"
+        message={`Delete ${deleting?.name}? Existing assignments remain historical.`}
+        busy={remove.isPending}
+        onClose={() => setDeleting(null)}
+        onConfirm={() => remove.mutate(deleting.id)}
+      />
+    </>
+  );
+}
