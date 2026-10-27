@@ -1,0 +1,17 @@
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { projectsApi } from "../../../api/endpoints";
+import { useAuth, useCompany } from "../../auth/context/AuthContext";
+import { AppAlert, AppSkeleton, StatCard } from "../../../components/ui/Controls";
+import { AppBadge, EmptyState, PageHeader, SectionCard } from "../../../components/ui/AppUI";
+
+const personName=u=>u?.name||[u?.first_name,u?.last_name].filter(Boolean).join(" ")||"there";
+const roleNames=u=>(u?.roles||[]).map(r=>typeof r==="string"?r:r?.name).filter(Boolean);
+const roleLabel=u=>roleNames(u).join(", ")||u?.role||"Company user";
+const actions=[
+  ["Manage users","/users","users.view"],
+  ["Manage roles","/roles","roles.view"],
+  ["Manage departments","/departments","departments.view"],
+  ["Company profile","/company","company.view"],
+];
+export default function CompanyDashboard(){const{user,can}=useAuth();const{company,companyError}=useCompany();const projects=useQuery({queryKey:["company",company?.id,"dashboard-projects",user?.id],queryFn:()=>projectsApi.list({page:1,per_page:6,sort:"created_at",direction:"desc"}),enabled:!!company&&can("projects.view")});const rows=projects.data?.data||[];const total=projects.data?.meta?.total;const roles=roleNames(user);const audience=roles.includes("site_supervisor")?"Your assigned construction projects and authorized site operations.":roles.includes("client")?"Projects and progress shared with your account.":"Manage your company workspace and authorized construction operations.";return <><PageHeader title={`Welcome, ${personName(user)}`} description={audience}/>{companyError&&<AppAlert tone="warning">Some company profile details are restricted for your account.</AppAlert>}<SectionCard title="Workspace"><div className="profile-grid"><div className="profile-item"><small>Company</small><strong>{company?.name||user?.company?.name||"Company workspace"}</strong></div><div className="profile-item"><small>Signed in as</small><strong>{personName(user)}</strong></div><div className="profile-item"><small>Role</small><strong>{roleLabel(user)}</strong></div></div></SectionCard>{can("projects.view")&&<><div className="stats-grid"><StatCard label={roles.includes("company_admin")?"Total projects":"Authorized projects"} value={projects.isLoading?"…":total??0}/></div><SectionCard title={roles.includes("company_admin")?"Recent projects":"Your projects"}>{projects.isLoading?<div className="dashboard-project-grid"><AppSkeleton/><AppSkeleton/></div>:projects.isError?<AppAlert tone="danger">Projects could not be loaded. Please try again.</AppAlert>:rows.length?<div className="dashboard-project-grid">{rows.map(project=><article className="profile-item" key={project.id}><div className="button-group"><strong>{project.name}</strong><AppBadge tone={project.status==="active"?"success":"neutral"}>{project.status}</AppBadge></div><small>{project.code}</small><p>Progress: {project.progress_percentage??0}%</p></article>)}</div>:<EmptyState title="No authorized projects" description="Projects assigned or shared with you will appear here."/>}</SectionCard></>}<SectionCard title="Quick actions"><div className="button-group">{actions.filter(([, ,permission])=>can(permission)).map(([label,to])=><Link className="app-button secondary" to={to} key={to}>{label}</Link>)}<Link className="app-button secondary" to="/profile">My profile</Link></div></SectionCard></>}

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\ChangePasswordRequest;
 use App\Http\Requests\Api\V1\UpdateProfileRequest;
 use App\Http\Resources\Api\V1\UserResource;
-use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -14,7 +13,7 @@ use Illuminate\Validation\ValidationException;
 
 class ProfileController extends Controller
 {
-    public function update(UpdateProfileRequest $request, TenantContext $tenant): JsonResponse
+    public function update(UpdateProfileRequest $request): JsonResponse
     {
         $user = $request->user();
         $validated = $request->validated();
@@ -28,7 +27,7 @@ class ProfileController extends Controller
 
         activity('users')->causedBy($user)->performedOn($user)->event('user.profile_updated')
             ->withProperties([
-                'company_id' => $tenant->companyId(), 'target_user_id' => $user->id,
+                'company_id' => $user->company_id, 'target_user_id' => $user->id,
                 'changes' => ['before' => $before, 'after' => $user->only(array_keys($validated))],
             ])->log('user.profile_updated');
 
@@ -38,7 +37,7 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function password(ChangePasswordRequest $request, TenantContext $tenant): JsonResponse
+    public function password(ChangePasswordRequest $request): JsonResponse
     {
         $user = $request->user();
         $validated = $request->validated();
@@ -49,14 +48,14 @@ class ProfileController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($user, $validated, $tenant): void {
+        DB::transaction(function () use ($user, $validated): void {
             $user->update(['password' => Hash::make($validated['password'])]);
             $currentTokenId = $user->currentAccessToken()?->getKey();
             $user->tokens()->when($currentTokenId, fn ($query) => $query->whereKeyNot($currentTokenId))->delete();
 
             activity('users')->causedBy($user)->performedOn($user)->event('user.password_changed')
                 ->withProperties([
-                    'company_id' => $tenant->companyId(), 'target_user_id' => $user->id,
+                    'company_id' => $user->company_id, 'target_user_id' => $user->id,
                 ])->log('user.password_changed');
         });
 

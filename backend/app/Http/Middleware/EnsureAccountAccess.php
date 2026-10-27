@@ -22,6 +22,10 @@ class EnsureAccountAccess
             return $this->denied('Account access is unavailable.');
         }
 
+        if ($user->isPlatformAdmin()) {
+            return $next($request);
+        }
+
         if (! $user->company_id) {
             return $this->denied('A company assignment is required.');
         }

@@ -2,22 +2,35 @@
 
 ## Runtime
 
-React 18 and Vite provide the application shell. TypeScript is strict for new foundation files while `allowJs` permits incremental migration of the existing JavaScript template. React Router owns public, guest, protected, and permission-gated routes. TanStack Query is the server-state boundary; Zustand stores only local presentation preferences. React Hook Form and Zod own forms and client validation.
+React 18 and Vite provide the SPA shell. React Router owns public, guest, platform, authenticated, and permission-aware routes. TanStack Query owns server state, React Hook Form and Zod own forms, and Zustand stores browser-only theme preferences.
 
-## Structure
+The active application is JavaScript/JSX only. Runtime modules use `.js`, React components use `.jsx`, and the project has no TypeScript compiler configuration or direct TypeScript tooling dependencies. Historical files under `legacy-template/` are outside this maintained-source rule and are never imported.
 
-- `src/design-system/icons`: the only application icon registry.
-- `src/design-system/theme`: tokens, themes, provider, and persistent UI settings.
-- `src/design-system/components`: reusable typed primitives and TanStack `DataTable`.
-- `src/services`: central transport and normalized API errors.
-- `src/context`: authenticated user and company identity until auth is migrated to query hooks.
-- `src/pages`: current route composition. New business work should move incrementally into `src/features/<module>`.
-- `src/components/WorkspaceLayout.jsx`: permission-aware dashboard shell.
+## Source organization
 
-## State boundaries
+- `src/api/`: the single Axios client and shared endpoint adapters.
+- `src/components/`: reusable UI, table, and layout building blocks.
+- `src/features/<feature>/`: pages, components, context, tests, and utilities owned by a business capability.
+- `src/layouts/`: company and platform application shells.
+- `src/routes/`: route guards and the complete lazy route registry.
+- `src/lib/theme/`: shared theme state, provider, and CSS tokens.
+- `src/App.jsx`: provider and router composition only.
+- `src/main.jsx`: application bootstrap and global stylesheet imports.
 
-Backend resources belong in TanStack Query and use keys scoped by authenticated user/company. Mutations invalidate relevant keys. Query cache must clear when identity changes or on logout. Theme, density, and sidebar preferences are local UI state and never affect authorization or business data.
+The application currently has active features for auth, platform administration, dashboard, company, users, roles, departments, profile, and settings. Empty feature placeholders are not created.
 
-## Migration boundary
+## Routing and authorization
 
-The repository contains a large legacy WowDash JavaScript component library using several icon/UI dependencies. It is outside the new routed foundation. New and migrated application code must use this documented system; legacy modules should be removed or migrated module-by-module rather than mechanically rewritten without product coverage.
+`src/routes/AppRoutes.jsx` is the route registry and preserves all established URLs. Business pages remain lazy-loaded. `ProtectedRoute`, `GuestRoute`, and `PlatformRoute` provide presentation gating; backend authorization remains authoritative. Navigation uses effective permission names returned by `/me`, never role-name-only checks.
+
+## State and API boundaries
+
+`src/api/axiosClient.js` is the only active Axios instance. It attaches the session token and normalizes failures. `src/api/endpoints.js` defines shared resource calls without changing existing payloads or response handling. Auth and company identity live in `features/auth/context/AuthContext.jsx`; identity changes clear protected query cache.
+
+## Legacy boundary
+
+The old unrouted WowDash demo pages, layers, helpers, charts, duplicate services, and `MasterLayout` are preserved in `legacy-template/` outside `src`. Nothing in the maintained application imports that archive. It is excluded from active linting and bundling and can be inspected or selectively migrated later.
+
+## Verification boundary
+
+The maintained Vitest command covers authentication, route authorization, platform company editing and administrator setup, company dashboard behavior, company profile permissions and refresh, users/roles/departments presentation authorization, profile/password flows, settings persistence, permission selection, and shared modal/form accessibility. Laravel feature tests remain the authoritative verification for tenant isolation and mutation authorization.

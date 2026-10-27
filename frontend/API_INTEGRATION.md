@@ -4,11 +4,23 @@
 
 These contracts were verified against the Laravel 12 project at `../backend` on 2026-10-27. Sources include `routes/api.php`, API controllers, Form Requests, `UserResource`, models, middleware, policies, `PermissionCatalog`, and `CompanyRoleInitializer`. The backend is authoritative.
 
-`src/services/apiClient.ts` uses `VITE_API_BASE_URL` (normally `http://127.0.0.1:8000/api/v1`), sends JSON, attaches the session bearer token, and normalizes API failures. All paths below are relative to `/api/v1`. Protected routes require Sanctum, an active user, a valid company assignment, and an operational company. Company routes also establish tenant scope. Validation failures use `{ message, errors: Record<string,string[]> }`; nested registration keys are dot paths such as `company.email`.
+`src/api/axiosClient.js` is the sole Axios client. It uses `VITE_API_BASE_URL` (normally `http://127.0.0.1:8000/api/v1`), sends JSON, attaches the session bearer token, and normalizes API failures. `src/api/endpoints.js` contains the currently shared endpoint adapters. All paths below are relative to `/api/v1`. Protected routes require Sanctum, an active user, a valid company assignment, and an operational company. Company routes also establish tenant scope. Validation failures use `{ message, errors: Record<string,string[]> }`; nested registration keys are dot paths such as `company.email`.
 
-## Company registration and email verification
+## Platform company creation and email verification
 
-### `POST /register-company` (public; 5/hour/IP)
+Anonymous company registration is retired. `POST /register-company` returns 404. Platform company creation is documented in `../docs/PLATFORM_COMPANY_MANAGEMENT.md` and is protected by Sanctum plus `platform.admin`.
+
+### Retired: `POST /register-company`
+
+The route is intentionally absent and returns 404 without writing data. Company creation moved to authenticated `POST /platform/companies`.
+
+### `POST /administrator/password/setup` (public; 5/minute)
+
+Accepts `{ email, token, password, password_confirmation }`. Passwords require at least 12 characters with mixed case, a number, and a symbol. Success returns `{ message }`. Invalid, expired, unknown, or previously used tokens return the same 422 message. The endpoint consumes Laravel's configured password-broker token and never changes company status.
+
+### Platform company APIs
+
+All `/platform/*` endpoints require Sanctum and `platform.admin`. `PATCH /platform/companies/{company}` accepts only `name`, `email`, `phone`, and `address`. The frontend edit route is `/platform/companies/:id/edit` and invalidates company list, detail, and dashboard query caches after a successful save.
 
 ```json
 {
@@ -52,13 +64,13 @@ Request `{ "email": "ayesha@example.com" }`; required email max 255, trimmed/low
 |---|---|---|
 | `POST /login` | Required email and string password; 200 `{ message,user,token }` | Public, 5/minute; active user, operational company, verified email. Invalid/unavailable: 401; unverified: 403. |
 | `POST /logout` | 200 `{ message }`; deletes current token | Sanctum |
-| `GET /me` | 200 `{ user }` | Sanctum + account access |
-| `PUT /me` | Profile subset; 200 `{ message,user: UserResource }` | Authenticated tenant user |
-| `PUT /me/password` | `current_password`, `password`, `password_confirmation`; new password min 8 with letters/numbers; 200 `{ message }` | Authenticated tenant user; wrong current password 422; other tokens revoked |
+| `GET /me` | 200 `{ user }`; company users include backend-authoritative `roles`, `effective_permissions`, and a minimal `company` identity | Sanctum; active platform user or operational company user |
+| `PUT /me` | Profile subset; 200 `{ message,user: UserResource }` | Active company user or company-less Platform Super Admin |
+| `PUT /me/password` | `current_password`, `password`, `password_confirmation`; new password min 8 with letters/numbers; 200 `{ message }` | Active company user or Platform Super Admin; wrong current password 422; other tokens revoked |
 
 Profile fields: `first_name`/`last_name` required when present, string max 100; `name` required when present, max 255; `email` required when present, email max 255 and unique except self; `phone` and legacy `department` nullable strings max 30/100. Tenant, password, role(s), permissions, status, and remember token are prohibited.
 
-Login and `/me` serialize the User model directly (password, remember token, company_id hidden). `UserResource` fields are `id,name,first_name,last_name,email,email_verified_at,phone,role,roles,status,department,department_id,department_details,created_at,updated_at,company_id,company`; conditional relationships appear only when loaded.
+Login returns the authenticated user and token, while the frontend treats `/me` as the authoritative identity refresh. Company identities include company-scoped roles and effective permission names evaluated with the authenticated company team context. The company summary contains only `id`, `name`, and `status`.
 
 ## Company profile
 
@@ -137,3 +149,21 @@ Shape: `{ id,name,code,description,status,created_by,created_at,updated_at,emplo
 | `GET /departments/{id}/users` | Optional page/per_page 1..100; `{ users: UserResource[],meta }` | `departments.view` |
 
 Pagination meta is `{ current_page,last_page,per_page,total }`. Missing tenant resources return 404, permission failures 403, validation/protected fields 422, and throttling 429. Frontend visibility is not authorization; Laravel remains authoritative.
+
+The Step 2.3 frontend follows these contracts directly: user role payloads contain role names, role permission payloads contain catalog names, and department assignment uses `{ department_id: integer|null }`. No company-management form sends `company_id` or platform privilege fields.
+
+## Personal account
+
+These endpoints require an authenticated active account but do not require company context, so both company users and Platform Super Admins can use them.
+
+| Method/path | Contract | Security behavior |
+|---|---|---|
+| `GET /me` | `{ user: UserResource }` | Returns the authoritative identity, company, roles, permissions, and platform flag. |
+| `PUT /me` | Optional `first_name,last_name,name,email,phone,department`; `{ message,user }` | Company IDs, passwords, statuses, roles, permissions, and platform privilege fields are rejected. |
+| `PUT /me/password` | Required `current_password,password,password_confirmation`; password min 8 with letters and numbers; `{ message }` | Throttled to 5/minute. Verifies the current password, hashes the replacement, retains the calling token, and revokes all other tokens. |
+
+Validation errors are returned as JSON 422 field errors. Password values are never returned or written to activity properties. A suspended company user remains blocked by account access middleware; allowing company-less Platform Super Admins does not bypass active-account checks.
+
+## Browser token security
+
+The current frontend stores the opaque Sanctum bearer token in `sessionStorage`. This limits persistence to the browser tab/session and the Axios interceptor clears it on protected 401 responses, but JavaScript-readable storage remains exposed if an XSS vulnerability executes in the origin. Active source does not use raw HTML injection or log credentials/tokens. Migrating to HttpOnly cookies is intentionally out of scope and would require coordinated Sanctum stateful-domain, CORS credential, CSRF-cookie, session-cookie, and Axios `withCredentials` changes.

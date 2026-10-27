@@ -22,6 +22,7 @@ use App\Support\Tenancy\TenantContext;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -39,6 +40,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        ResetPassword::createUrlUsing(function ($user, string $token): string {
+            $frontend = rtrim((string) config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:5173')), '/');
+            return $frontend.'/administrator/password/setup?token='.urlencode($token).'&email='.urlencode($user->getEmailForPasswordReset());
+        });
         RateLimiter::for('company-registration', fn ($request) => Limit::perHour(5)->by('company-registration:'.$request->ip()));
         RateLimiter::for('company-verification', fn ($request) => Limit::perMinute(10)->by('company-verification:'.$request->ip()));
         RateLimiter::for('company-verification-resend', fn ($request) => Limit::perMinute(3)->by('company-verification-resend:'.$request->ip()));

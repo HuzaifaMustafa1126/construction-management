@@ -1,8 +1,19 @@
-# React + Vite
+# Construction Project Management Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React/Vite frontend for the multi-tenant construction management SaaS.
 
-Currently, two official plugins are available:
+## Commands
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```bash
+npm install
+npm run dev
+npm test
+npm run lint
+npm run build
+```
+
+## Architecture
+
+Application source is feature-based under `src/features`. The maintained runtime is JavaScript/JSX only: non-React modules use `.js`, and React components use `.jsx`. Shared API transport, UI primitives, layouts, routes, and theme infrastructure live in their corresponding top-level `src` directories. See `FRONTEND_ARCHITECTURE.md`, `DESIGN_SYSTEM.md`, `API_INTEGRATION.md`, and `../docs/FRONTEND_STRUCTURE_REFACTOR.md`.
+
+The unrouted original WowDash examples are retained under `legacy-template/` for reference and are not part of the application build or active lint scope.

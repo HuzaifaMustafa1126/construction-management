@@ -44,9 +44,15 @@ class User extends Authenticatable implements MustVerifyEmailContract
     protected function casts(): array
     {
         return [
+            'is_platform_admin' => 'boolean',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function isPlatformAdmin(): bool
+    {
+        return $this->is_platform_admin === true && $this->company_id === null;
     }
 
     public function company(): BelongsTo

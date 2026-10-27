@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureAccountAccess;
 use App\Http\Middleware\EnsureCompanyContext;
+use App\Http\Middleware\EnsurePlatformAdmin;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'account.access' => EnsureAccountAccess::class,
             'company.context' => EnsureCompanyContext::class,
+            'platform.admin' => EnsurePlatformAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

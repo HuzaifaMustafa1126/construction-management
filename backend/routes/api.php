@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AdministratorPasswordController;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\CompanyRegistrationController;
 use App\Http\Controllers\Api\DailySiteReportController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Api\MaterialDeliveryController;
 use App\Http\Controllers\Api\MaterialStockAdjustmentController;
 use App\Http\Controllers\Api\MeasurementUnitController;
 use App\Http\Controllers\Api\PermissionController;
+use App\Http\Controllers\Api\PlatformCompanyController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\ProjectInventoryController;
@@ -36,21 +38,31 @@ Route::prefix('v1')->group(function () {
 
     Route::post('/login', [AuthController::class, 'login'])
         ->middleware('throttle:5,1');
-    Route::post('/register-company', [CompanyRegistrationController::class, 'register'])->middleware('throttle:company-registration');
+    Route::post('/administrator/password/setup', [AdministratorPasswordController::class, 'store'])
+        ->middleware('throttle:5,1');
     Route::get('/verify-email/{id}/{hash}', [CompanyRegistrationController::class, 'verify'])->middleware('throttle:company-verification')->name('verification.verify');
     Route::post('/resend-verification', [CompanyRegistrationController::class, 'resend'])->middleware('throttle:company-verification-resend');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
+        Route::get('/me', [AuthController::class, 'me']);
+
+        Route::prefix('platform')->middleware('platform.admin')->group(function () {
+            Route::get('/dashboard', [PlatformCompanyController::class, 'dashboard']);
+            Route::get('/companies', [PlatformCompanyController::class, 'index']);
+            Route::post('/companies', [PlatformCompanyController::class, 'store']);
+            Route::get('/companies/{company}', [PlatformCompanyController::class, 'show']);
+            Route::patch('/companies/{company}', [PlatformCompanyController::class, 'update']);
+            Route::patch('/companies/{company}/status', [PlatformCompanyController::class, 'status']);
+            Route::patch('/companies/{company}/administrators/{user}/status', [PlatformCompanyController::class, 'administratorStatus']);
+        });
 
         Route::middleware('account.access')->group(function () {
-            Route::get('/me', [AuthController::class, 'me']);
-
+            Route::put('/me', [ProfileController::class, 'update']);
+            Route::put('/me/password', [ProfileController::class, 'password'])->middleware('throttle:5,1');
             Route::middleware('company.context')->group(function () {
                 Route::get('/company', [CompanyController::class, 'show']);
                 Route::match(['put', 'patch'], '/company', [CompanyController::class, 'update']);
-                Route::put('/me', [ProfileController::class, 'update']);
-                Route::put('/me/password', [ProfileController::class, 'password']);
                 Route::get('/users', [UserController::class, 'index']);
                 Route::post('/users', [UserController::class, 'store']);
                 Route::get('/users/{id}', [UserController::class, 'show']);

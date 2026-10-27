@@ -7,6 +7,7 @@ use App\Models\Company;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\PermissionRegistrar;
 
 class AuthController extends Controller
 {
@@ -24,11 +25,23 @@ class AuthController extends Controller
             return $this->loginDenied();
         }
 
+        if (! $user->isActive()) {
+            return $this->loginDenied();
+        }
+
+        if ($user->isPlatformAdmin()) {
+            return response()->json([
+                'message' => 'Login successful',
+                'user' => $user,
+                'token' => $user->createToken('platform_auth_token', ['platform'])->plainTextToken,
+            ]);
+        }
+
         $company = $user->company_id
             ? Company::query()->find($user->company_id)
             : null;
 
-        if (! $user->isActive() || ! $company) {
+        if (! $company) {
             return $this->loginDenied();
         }
 
@@ -59,8 +72,35 @@ class AuthController extends Controller
     // Get logged-in user
     public function me(Request $request)
     {
+        $user = $request->user();
+        if (! $user->isActive() || ($user->company_id === null && ! $user->isPlatformAdmin())) {
+            return response()->json(['message' => 'Account access is unavailable.'], 403);
+        }
+        if (! $user->isPlatformAdmin()) {
+            $company = Company::query()->find($user->company_id);
+            if (! $company?->isOperational()) {
+                return response()->json(['message' => 'Company access is suspended.'], 403);
+            }
+            $previousTeamId = getPermissionsTeamId();
+            try {
+                setPermissionsTeamId($company->id);
+                app(PermissionRegistrar::class)->forgetCachedPermissions();
+                $user->unsetRelation('roles')->unsetRelation('permissions');
+                $identity = array_merge($user->toArray(), [
+                    'roles' => $user->getRoleNames()->sort()->values()->all(),
+                    'effective_permissions' => $user->getAllPermissions()->pluck('name')->sort()->values()->all(),
+                    'company' => ['id' => $company->id, 'name' => $company->name, 'status' => $company->status],
+                ]);
+            } finally {
+                setPermissionsTeamId($previousTeamId);
+                $user->unsetRelation('roles')->unsetRelation('permissions');
+                app(PermissionRegistrar::class)->forgetCachedPermissions();
+            }
+        } else {
+            $identity = $user->toArray();
+        }
         return response()->json([
-            'user' => $request->user(),
+            'user' => $identity,
         ]);
     }
 

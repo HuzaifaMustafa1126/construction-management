@@ -1,32 +1,27 @@
 # Global Design System
 
-## Principles
+## Ownership
 
-The interface uses one semantic token system, one component vocabulary, and Heroicons Outline only. Feature pages compose shared primitives and must not introduce their own visual language.
+The maintained UI system is split by responsibility without duplication:
 
-## Theme and color
+- `src/components/ui/`: buttons, inputs, selects, dialogs, badges, feedback, dropdowns, skeletons, and `AppIcon`.
+- `src/components/tables/`: the global TanStack `DataTable`.
+- `src/components/layout/`: shared navigation declarations and future layout-only elements.
+- `src/lib/theme/`: `ThemeProvider`, Zustand presentation settings, semantic tokens, and theme definitions.
+- `src/components/ui/icons/iconRegistry.js`: the only Heroicons Outline registry.
 
-`tokens.css` owns typography, spacing, radii, shadows, breakpoints, and focus treatment. `themes.css` owns semantic colors. Components consume names such as `--color-primary`, `--color-surface`, `--color-text`, `--color-border`, and status tokens—never palette values.
+Feature pages compose these primitives. They must not import Heroicons directly, create competing form/table/modal systems, or hardcode theme colors.
 
-Modes: `light`, `dark`. Accents: `blue`, `green`, `orange`. The settings store applies `data-mode`, `data-accent`, and `data-density` to `<html>` and persists choices locally. Accessible foreground tokens accompany colored backgrounds.
+## Theme
 
-## Typography and spacing
+Supported modes are light and dark. Supported accents are blue, green, and orange. Density is comfortable or compact, and desktop sidebar collapse is a persisted presentation preference. `ThemeProvider` applies `data-mode`, `data-accent`, and `data-density` to the root document element.
 
-Inter is preferred with a system fallback. The scale is `xs`, `sm`, `md`, `lg`, `xl`, and `page`; weights are 400–700. Spacing uses the 4px-based `--space-1` through `--space-10` scale. Radii are `sm`, `md`, `lg`, and `xl`; shadows are `sm` and `md`.
+`tokens.css` owns typography, spacing, radii, shadows, breakpoints, and focus treatment. `themes.css` owns semantic colors. Application CSS consumes semantic custom properties rather than palette values.
 
-## Components
+## Components and icons
 
-- Buttons: `AppButton` variants primary, secondary, outline, ghost, danger; `IconButton`; `ButtonGroup`.
-- Forms: `AppInput`, `AppTextarea`, `AppSelect`, checkbox, radio, switch, date wrapper, `FormField`, `FormError`. All forward normal input props for React Hook Form.
-- Tables: `DataTable` is the required table primitive. It provides search, sorting, pagination, loading/empty states, responsive overflow, and injected permission-aware actions. Density is global.
-- Overlays: `AppModal`, `ConfirmDialog`, `AppDrawer`, `AppDropdown`, `AppTooltip`. Dialogs require labels, Escape/close behavior when extended, and visible focus.
-- Feedback: `AppBadge`, `AppAlert`, toast adapter, spinner, skeleton, `EmptyState`, error state.
-- Layout: `PageHeader`, `PageContainer`, `SectionCard`, `StatCard`, `FilterBar`, tabs, breadcrumbs.
+`AppUI.jsx` exports the shared application vocabulary, while shared controls live in `Controls.jsx`. `DataTable.jsx` remains the only global table primitive. `AppIcon` accepts registry names and standardizes Heroicons Outline size and stroke. All maintained design-system code follows the JavaScript/JSX-only project rule.
 
-## Icon system
+Authenticated company and platform headers share identity dropdown behavior. Forms retain programmatic labels, field errors use alert semantics, focus remains visible, and responsive layouts preserve the mobile navigation drawer.
 
-All icons are `@heroicons/react/24/outline` entries registered in `src/design-system/icons/iconRegistry.ts`. `AppIcon` accepts only registry keys and standardizes sizes (`xs` 14, `sm` 16, `md` 20, `lg` 24, `xl` 32) and stroke width. Changing a registry mapping changes every consumer.
-
-## Responsive and accessibility
-
-Breakpoints: 640, 768, 1024, 1280px. Forms collapse to one column below tablet width; tables scroll horizontally; overlays fit within the viewport; the dashboard sidebar becomes a drawer on mobile. Every control needs a programmatic label, errors use `role=alert`, focus is visible, color is not the only status signal, and icon-only controls require an accessible label.
+Shared modals receive focus when opened, close with Escape, restore prior focus when removed, and expose dialog semantics. Shared inputs, selects, and textareas connect field errors with `aria-describedby`. Status badges and overlays use semantic theme tokens in every supported mode/accent.
