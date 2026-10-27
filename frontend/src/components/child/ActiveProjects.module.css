@@ -1,0 +1,134 @@
+.card {
+  overflow: hidden;
+}
+
+.header {
+  min-height: 48px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.title {
+  color: var(--text-primary-light);
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.viewAll {
+  color: var(--primary-600);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.viewAll:hover {
+  color: var(--primary-700);
+  text-decoration: underline;
+}
+
+.table {
+  min-width: 930px;
+  color: var(--text-primary-light);
+  font-size: 12px;
+}
+
+.table > :not(caption) > * > * {
+  padding: 10px 12px;
+  vertical-align: middle;
+  border-color: var(--border-color);
+  white-space: nowrap;
+}
+
+.table thead th {
+  color: var(--text-secondary-light);
+  background-color: var(--neutral-50);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.table tbody td {
+  color: var(--text-primary-light);
+  font-weight: 400;
+}
+
+.progressCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 130px;
+}
+
+.progressTrack {
+  width: 80px;
+  height: 9px;
+  overflow: hidden;
+  background-color: var(--neutral-200);
+  border-radius: 2px;
+}
+
+.progressBar {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.progressValue {
+  min-width: 28px;
+  color: var(--text-primary-light);
+  font-size: 11px;
+}
+
+.profit {
+  color: var(--success-main) !important;
+  font-weight: 600 !important;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 74px;
+  padding: 4px 9px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.onTrack {
+  color: var(--success-main);
+  background-color: var(--success-focus);
+}
+
+.delayed {
+  color: var(--danger-main);
+  background-color: var(--danger-focus);
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--text-primary-light);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+}
+
+.actionButton:hover,
+.actionButton:focus-visible {
+  color: var(--primary-600);
+  background-color: var(--primary-50);
+}
+
+[data-theme="dark"] .table thead th {
+  background-color: var(--neutral-100);
+}
+
+@media (max-width: 767.98px) {
+  .header {
+    padding-inline: 16px;
+  }
+}
