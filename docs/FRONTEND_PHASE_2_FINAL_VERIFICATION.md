@@ -1,98 +1,121 @@
 # Frontend Phase 2 Final Verification
 
-Date: 2026-10-27
+Date: 2026-10-28
 
-## Executive summary
+## A. JavaScript migration — PASSED
 
-Phase 2 is stable for the implemented authentication, platform administration, company workspace, users, roles, departments, profile, and settings scope. Active frontend checks pass, and the relevant Laravel security suite passes against SQLite `:memory:` fixtures. No application-database records, migrations, seeders, company assignments, or backend business rules were changed.
+- Active `.ts`/`.tsx` files found: none. The migration was already complete before this verification run.
+- Active replacements verified: `axiosClient.js`, `themeStore.js`, `ThemeProvider.jsx`, `iconRegistry.js`, and `AppIcon.jsx`.
+- No active imports reference TypeScript or `legacy-template/`.
+- No TypeScript compiler, ESLint package, typecheck script, `tsconfig`, or `vite-env.d.ts` remains.
+- Historical TypeScript may remain only in the excluded `legacy-template/` archive.
 
-## Verified functionality
+## B. Final active source structure — PASSED
 
-### Passed — authentication and identity
+```text
+src/
+|-- api/{axiosClient.js,endpoints.js}
+|-- components/
+|   |-- layout/navigation.js
+|   |-- tables/{DataTable.jsx,index.js}
+|   `-- ui/{AppIcon.jsx,AppUI.jsx,Controls.jsx,app.css,index.js,icons/iconRegistry.js}
+|-- features/
+|   |-- auth/{context/,pages/}
+|   |-- company/pages/
+|   |-- dashboard/pages/
+|   |-- departments/pages/
+|   |-- platform/pages/
+|   |-- profile/pages/
+|   |-- roles/{components/,pages/}
+|   |-- settings/pages/
+|   `-- users/{legacy/,pages/,utils/}
+|-- layouts/{PlatformLayout.jsx,WorkspaceLayout.jsx}
+|-- lib/theme/{ThemeProvider.jsx,themeStore.js,useTheme.js,tokens.css,themes.css}
+|-- routes/{AppRoutes.jsx,ProtectedRoute.jsx}
+|-- App.jsx
+`-- main.jsx
+```
 
-- Login validation and populated credential submission.
-- Backend valid/invalid login behavior, generic unknown-user response, rate limiting, inactive accounts, suspended companies, revoked/expired tokens, session restoration, logout, and current-token revocation.
-- AppInput React Hook Form ref forwarding.
-- Frontend 401 session clearing and tenant-query-cache clearing.
-- Administrator password setup success, invalid/expired/reused token behavior, active-company activation, and suspended-company restrictions.
-- Profile editing and password confirmation/session revocation behavior for company and platform identities.
+`users/legacy` contains retained obsolete Node fixtures and is not imported by the application. The WowDash `legacy-template/` archive remains excluded from build and lint.
 
-### Passed — platform administration
+## C. Features verified
 
-- Platform route guard and company-user denial.
-- Platform dashboard/list API authorization, company creation/editing/details/status, administrator status controls, invitation notification, and password setup.
-- Anonymous registration denial and protection from ordinary company roles/profile payloads.
+| Area | Status | Evidence |
+|---|---|---|
+| Login, session restoration, logout, expired session | PASSED | Vitest and Laravel authentication tests |
+| Platform route protection and company administration | PASSED | Vitest and Laravel platform tests |
+| Company dashboard and permission presentation | PASSED | Vitest and Laravel authorization tests |
+| Company profile | PASSED | Vitest and Laravel company tests |
+| Users, roles, permissions, and departments | PASSED | Vitest presentation tests and Laravel CRUD/security tests |
+| Profile and change password | PASSED | Vitest and Laravel security tests |
+| Settings and theme persistence | PASSED | Vitest |
+| Shared form/modal accessibility behaviors | PASSED | Vitest and source review |
+| Full device/browser/screen-reader matrix | NOT TESTED | Requires release QA on real browsers and assistive technology |
 
-### Passed — company workspace
+## D. Authentication results — PASSED
 
-- Backend-authoritative identity, roles, effective permissions, navigation filtering, custom-role behavior, and dashboard project visibility.
-- Company profile viewing, permission-gated editing, validation, safe fields, global company refresh, and tenant ownership.
-- Users listing/filtering/pagination, creation/update/status/deletion, role/department assignment, last-admin protection, and cross-company denial.
-- Roles CRUD, permission catalog/group behavior, grant-subset rules, protected `company_admin`, and rejection of platform privileges.
-- Departments CRUD/status/users/assignment, dependency/history behavior, and tenant isolation.
+Maintained tests cover populated React Hook Form values (including the prior undefined-credentials regression), validation, session restoration, logout, cache clearing, route redirects, and password changes. Laravel tests cover valid/invalid credentials, inactive/suspended identities, suspended companies, revoked/expired tokens, rate limiting, and administrator password setup. Password visibility/loading/backend-error behavior was source-reviewed; a complete interactive browser matrix was NOT TESTED.
 
-### Passed — tenant isolation
+The sole Axios client reads `VITE_API_BASE_URL` with the existing `VITE_API_URL` fallback, attaches the `sessionStorage` bearer token, normalizes validation/network/auth errors, and clears authentication on protected 401 responses. Tokens and passwords are not logged. JavaScript-readable token storage remains exposed to successful same-origin XSS; an HttpOnly-cookie migration requires a separate coordinated project.
 
-Laravel tests verify Company A cannot read or mutate Company B users, roles, departments, projects, assignments, or generic tenant models. Request payloads cannot override company context, cross-company URLs fail closed, and permission-team context does not leak between requests. Frontend identity/logout tests verify cached protected state is cleared.
+## E. Platform Super Admin results — PASSED
 
-## Security findings
+Platform routing and APIs reject anonymous and ordinary company identities. Tests cover dashboard/list access, company creation/editing/status, administrator status/password setup, and profile/password self-service. Anonymous registration is retired, platform privileges cannot be introduced through company roles, and profile/user payloads cannot mutate `is_platform_admin`.
 
-- One active Axios client attaches an opaque bearer token from `sessionStorage`; protected 401 responses remove it and dispatch session expiration.
-- No active `dangerouslySetInnerHTML`, raw `innerHTML`, credential logging, token logging, duplicate auth provider, duplicate theme provider, or alternate icon library was found.
-- `VITE_*` configuration contains an API URL only, not a secret.
-- `sessionStorage` is JavaScript-readable and therefore vulnerable to successful same-origin XSS. HttpOnly-cookie authentication is recommended as a separate approved project, not a silent Phase 2 change.
-- Backend tests run with `APP_ENV=testing`, SQLite `:memory:`, array cache/session/mail, so the application database is not touched.
+## F. Company management results — PASSED
 
-## UI, accessibility, and responsive review
+Company profile, users, roles/permissions, and departments were verified against backend-owned contracts. Tests cover filters/pagination, safe mutations, validation, role/department assignment, last-administrator protection, permission restrictions, dependency rules, and identity refresh. No application database records were used or modified.
 
-- Shared labels, alert errors, visible focus rules, responsive forms, table overflow, mobile sidebar drawer, dropdowns, and semantic colors were inspected.
-- Fixed shared select/textarea error association with `aria-describedby`.
-- Fixed shared modal initial focus, Escape close, and prior-focus restoration.
-- Replaced fixed badge and overlay colors with semantic theme tokens.
-- Automated DOM tests verify route redirects, permission-hidden actions, modal keyboard close/focus, and form error announcements.
-- Full manual browser/device and assistive-technology testing was not performed; it remains a release QA activity.
+## G. Multi-tenant security results — PASSED
 
-## Performance
+The isolated Laravel run verifies cross-company denial for users, roles, departments, and tenant models; rejection of supplied `company_id`; company-scoped creation; fail-closed missing/suspended tenant behavior; and context cleanup between requests. Frontend identity/logout tests verify protected cache clearing. Frontend guards remain presentation controls; Laravel is authoritative.
 
-| Measurement | Baseline | Final |
+## H. Theme and UI results
+
+- Light/dark modes, blue/green/orange accents, density, sidebar preference, and persistence: PASSED.
+- One Heroicons Outline registry through `AppIcon`; no direct feature imports or alternate libraries: PASSED.
+- Shared controls, errors, modal Escape/focus behavior, semantic tokens, responsive table overflow, and mobile drawer: PASSED by tests/source review.
+- Manual keyboard-only, screen-reader, contrast, device, and cross-browser QA: NOT TESTED.
+
+## I. Performance results
+
+| Measurement | Previously reported | Current production build |
 |---|---:|---:|
-| Initial JavaScript | 531.08 kB | 531.56 kB |
-| Initial JavaScript gzip | 168.99 kB | 169.13 kB |
-| Main application CSS | 75.77 kB | 75.87 kB |
-| Main CSS gzip | 15.94 kB | 15.91 kB |
+| Main JavaScript chunk | 531.08 kB | 449.42 kB raw / 144.27 kB gzip |
+| All JavaScript chunks | Not reported | 556.11 kB raw / 178.03 kB gzip |
+| Main CSS | Not reported | 27.69 kB raw / 5.88 kB gzip |
 
-The small JavaScript increase is the shared modal keyboard/focus behavior. Route-level chunks remain split. All public CSS references now use root-absolute `/assets/...` URLs, eliminating the prior unresolved-stylesheet build warnings. The main chunk still exceeds Vite's 500 kB advisory; no arbitrary manual chunks or warning threshold changes were introduced.
+Status: PASSED. Route-level lazy chunks are present and the main chunk is below Vite's default 500 kB advisory. The build emits two non-fatal Rollup annotation notices from Zod; there are no unresolved stylesheet or oversized-chunk warnings.
 
-## Automated results
+## J. Automated test results
 
-- TypeScript: passed.
-- ESLint maintained source: passed.
-- Vitest: 26 passed across 11 files.
-- Relevant Laravel Phase 2 security/management suite: 97 passed, 405 assertions.
-- Existing project tenant/assignment verification: 15 passed, 104 assertions.
-- Production build: passed.
-- Git whitespace validation: passed (line-ending conversion notices only).
+| Verification | Status | Result |
+|---|---|---|
+| ESLint | PASSED | `npm.cmd run lint` |
+| Vitest | PASSED | 11 files, 26 tests |
+| Production build | PASSED | Vite 6.4.3, 600 modules transformed |
+| Laravel integration/security tests | PASSED | 101 tests, 426 assertions; SQLite `:memory:` |
+| Legacy Node tests | FAILED | 7 passed, 5 failed; obsolete local/demo behavior outside `npm test` |
+| Git whitespace validation | PASSED | `git diff --check` |
+| Active TypeScript/import scan | PASSED | No active `.ts`, `.tsx`, or TypeScript imports |
 
-The retained legacy Node tests cover obsolete local/demo user storage, not the active API-backed `UsersPage`. Their historical result remains 7 passed and 5 failed; they are preserved outside the maintained npm test command and were not altered to conceal failures.
+React Testing Library emits a `ReactDOMTestUtils.act` deprecation warning. It does not fail the suite and should be removed through a future dependency/test-harness upgrade.
 
-## Bugs fixed
+## K. Bugs fixed — PASSED
 
-1. Public stylesheets were referenced relatively and reported unresolved by Vite; paths are now rooted at `/assets`.
-2. Application HTML still advertised the WowDash demo; metadata now identifies Buildwise.
-3. Shared select/textarea errors lacked complete accessible description wiring.
-4. Shared modal did not support Escape, initial focus, or focus restoration.
-5. Active badges/modal overlay used fixed light-palette colors instead of semantic theme tokens.
+The existing Step 2.5 implementation includes fixes for input ref forwarding, accessible error descriptions, modal focus/Escape behavior, semantic badge/overlay colors, tenant cache clearing, rooted stylesheet references, and route-level lazy loading. No additional active defect was proven during this rerun.
 
-## Production prerequisites and blockers
+## L. Outstanding issues
 
-- Set production `APP_ENV=production`, `APP_DEBUG=false`, correct HTTPS `APP_URL`/`FRONTEND_URL`, and a production `VITE_API_BASE_URL` before building.
-- Replace development-only CORS origins with the exact HTTPS frontend origin. Current CORS is restricted to localhost and `supports_credentials=false`, which is correct for the current bearer-token approach but not production-ready as-is.
-- Configure a real mail transport and verified sender; the example defaults to `MAIL_MAILER=log`.
-- Verify signed password/reset URLs behind the production proxy/domain and enforce HTTPS/HSTS at the edge.
-- Protect environment secrets, configure database backups and restore testing, and run deployment migrations only through the approved release process.
-- Main bundle size remains an advisory, not a functional blocker.
-- Manual cross-browser, responsive-device, keyboard-only, screen-reader, and contrast QA remains outstanding.
+- Legacy demo Node suite: FAILED (5 known obsolete assertions).
+- Real-device/browser/assistive-technology QA: NOT TESTED.
+- Production CORS, HTTPS/proxy, mail, signed-link routing, backups, and environment values: BLOCKED until deployment infrastructure is supplied.
+- React test `act` warnings and two Zod/Rollup annotation notices remain non-blocking.
 
-## Phase 3 readiness
+## M. Production readiness — BLOCKED
 
-Automated architecture, security, tenant isolation, authorization, and production build gates pass. Phase 3 can begin after production environment/CORS/mail configuration and release QA are completed. No Phase 3 feature was implemented during this verification.
+Application code, lint, maintained tests, isolated backend security tests, and build pass. Release remains blocked on environment-specific work: production `APP_ENV`, `APP_DEBUG=false`, HTTPS URLs, `VITE_API_BASE_URL`, exact CORS origins, real mail transport, signed-link proxy behavior, secret protection, backup/restore validation, and manual release QA. No secrets were displayed or modified.
+
+## N. Phase 3 readiness — PASSED WITH PREREQUISITES
+
+The active frontend is JavaScript/JSX-only and Phase 2 architecture/security gates pass. Phase 3.1 may begin after the production prerequisites and manual release QA above. No Phase 3 functionality was implemented.

@@ -25,3 +25,5 @@ Supported modes are light and dark. Supported accents are blue, green, and orang
 Authenticated company and platform headers share identity dropdown behavior. Forms retain programmatic labels, field errors use alert semantics, focus remains visible, and responsive layouts preserve the mobile navigation drawer.
 
 Shared modals receive focus when opened, close with Escape, restore prior focus when removed, and expose dialog semantics. Shared inputs, selects, and textareas connect field errors with `aria-describedby`. Status badges and overlays use semantic theme tokens in every supported mode/accent.
+
+Projects reuse `PageHeader`, `SectionCard`, shared form controls, `ConfirmDialog`, `AppBadge`, `AppAlert`, and the global `DataTable`. The table accepts optional `sortable` and `paginated` flags so server-owned project sorting and pagination are not misrepresented as whole-dataset client operations. Project-specific responsive grids consume semantic tokens from the existing theme only.

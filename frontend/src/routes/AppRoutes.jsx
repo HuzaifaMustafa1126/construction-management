@@ -46,6 +46,10 @@ const RolesPage = lazy(() => import("../features/roles/pages/RolesPage"));
 const DepartmentsPage = lazy(
   () => import("../features/departments/pages/DepartmentsPage"),
 );
+const ProjectsPage = lazy(() => import("../features/projects/pages/ProjectsPage"));
+const CreateProjectPage = lazy(() => import("../features/projects/pages/CreateProjectPage"));
+const ProjectDetailsPage = lazy(() => import("../features/projects/pages/ProjectDetailsPage"));
+const EditProjectPage = lazy(() => import("../features/projects/pages/EditProjectPage"));
 const LoadingPage = () => (
   <div className="page-container" role="status">
     <AppSkeleton /> Loading page…
@@ -123,6 +127,22 @@ export default function AppRoutes() {
         <Route element={<ProtectedRoute permission="departments.view" />}>
           <Route element={<WorkspaceLayout />}>
             <Route path="/departments" element={<DepartmentsPage />} />
+          </Route>
+        </Route>
+        <Route element={<ProtectedRoute permission="projects.view" />}>
+          <Route element={<WorkspaceLayout />}>
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/projects/:id" element={<ProjectDetailsPage />} />
+          </Route>
+        </Route>
+        <Route element={<ProtectedRoute permission="projects.create" />}>
+          <Route element={<WorkspaceLayout />}>
+            <Route path="/projects/new" element={<CreateProjectPage />} />
+          </Route>
+        </Route>
+        <Route element={<ProtectedRoute permission="projects.update" />}>
+          <Route element={<WorkspaceLayout />}>
+            <Route path="/projects/:id/edit" element={<EditProjectPage />} />
           </Route>
         </Route>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

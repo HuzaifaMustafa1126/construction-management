@@ -15,6 +15,8 @@ export function DataTable({
   loading = false,
   emptyTitle = "No records found",
   searchable = true,
+  sortable = true,
+  paginated = true,
   actions,
 }) {
   const [filter, setFilter] = useState("");
@@ -38,9 +40,9 @@ export function DataTable({
     state: { globalFilter: filter },
     onGlobalFilterChange: setFilter,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    ...(searchable ? { getFilteredRowModel: getFilteredRowModel() } : {}),
+    ...(sortable ? { getSortedRowModel: getSortedRowModel() } : {}),
+    ...(paginated ? { getPaginationRowModel: getPaginationRowModel() } : {}),
   });
   return (
     <div className="data-table">
@@ -64,7 +66,8 @@ export function DataTable({
                   <th key={h.id}>
                     <button
                       type="button"
-                      onClick={h.column.getToggleSortingHandler()}
+                      onClick={sortable ? h.column.getToggleSortingHandler() : undefined}
+                      disabled={!sortable}
                     >
                       {flexRender(h.column.columnDef.header, h.getContext())}
                     </button>
@@ -101,7 +104,7 @@ export function DataTable({
           </div>
         )}
       </div>
-      <footer className="table-pagination">
+      {paginated && <footer className="table-pagination">
         <span>
           Page {table.getState().pagination.pageIndex + 1} of{" "}
           {table.getPageCount() || 1}
@@ -122,7 +125,7 @@ export function DataTable({
             <AppIcon name="next" />
           </button>
         </div>
-      </footer>
+      </footer>}
     </div>
   );
 }

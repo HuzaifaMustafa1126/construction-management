@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "test": "vitest run src/features/auth/pages/AuthPhase2.test.jsx src/features/platform/pages/PlatformFlows.test.jsx src/features/dashboard/pages/CompanyDashboard.test.jsx src/features/auth/context/AuthContext.test.jsx src/features/roles/components/PermissionSelector.test.jsx src/features/profile/pages/ProfilePages.test.jsx src/features/settings/pages/SettingsPage.test.jsx src/routes/ProtectedRoute.test.jsx src/components/ui/AppUI.test.jsx src/features/company/pages/CompanyProfilePage.test.jsx src/features/users/pages/ManagementAuthorization.test.jsx",
+    "test": "vitest run src/features/auth/pages/AuthPhase2.test.jsx src/features/platform/pages/PlatformFlows.test.jsx src/features/dashboard/pages/CompanyDashboard.test.jsx src/features/auth/context/AuthContext.test.jsx src/features/roles/components/PermissionSelector.test.jsx src/features/profile/pages/ProfilePages.test.jsx src/features/settings/pages/SettingsPage.test.jsx src/routes/ProtectedRoute.test.jsx src/components/ui/AppUI.test.jsx src/features/company/pages/CompanyProfilePage.test.jsx src/features/users/pages/ManagementAuthorization.test.jsx src/features/projects/pages/ProjectsPage.test.jsx src/features/projects/schemas/projectSchema.test.js",
     "preview": "vite preview"
   },
   "dependencies": {

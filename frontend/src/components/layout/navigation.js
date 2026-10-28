@@ -4,6 +4,17 @@ export const companyNavigation = [
     items: [{ label: "Dashboard", route: "/dashboard", icon: "dashboard" }],
   },
   {
+    label: "Work",
+    items: [
+      {
+        label: "Projects",
+        route: "/projects",
+        icon: "projects",
+        permission: "projects.view",
+      },
+    ],
+  },
+  {
     label: "Organization",
     items: [
       {

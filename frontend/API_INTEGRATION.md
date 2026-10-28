@@ -152,6 +152,25 @@ Pagination meta is `{ current_page,last_page,per_page,total }`. Missing tenant r
 
 The Step 2.3 frontend follows these contracts directly: user role payloads contain role names, role permission payloads contain catalog names, and department assignment uses `{ department_id: integer|null }`. No company-management form sends `company_id` or platform privilege fields.
 
+## Projects management
+
+All project routes require an authenticated operational company context. Listing additionally requires `projects.view` and is tenant-scoped; non-`company_admin` identities receive only projects to which they are assigned. Project resources expose `id`, supported descriptive/address/date fields, status, progress, audit IDs/timestamps, and team summary. `budget` and `currency` are conditionally omitted unless the policy grants `projects.budget.view`, including for clients.
+
+| Method/path | Contract | Access |
+|---|---|---|
+| `GET /projects` | Server filters `search,status,date_from,date_to`; sort `name,code,status,start_date,expected_end_date,created_at`; direction and pagination. Returns `{data,meta}`. | `projects.view` plus assignment/policy scope |
+| `POST /projects` | Supported project descriptive, address, date, and optional budget fields. Server owns company, currency, status=`planning`, progress=0, and audit fields. | `projects.create` |
+| `GET /projects/{id}` | `{data: ProjectResource}` or tenant-safe 404. | `projects.view` plus project policy |
+| `PUT|PATCH /projects/{id}` | Supported descriptive, address, date, and budget fields only. | `projects.update`; clients denied by policy |
+| `DELETE /projects/{id}` | Soft archives the project. | `projects.delete`; company-admin policy required |
+| `PATCH /projects/{id}/status` | `{status}` using the backend transition graph. | `projects.update`; clients denied |
+| `PATCH /projects/{id}/progress` | `{progress_percentage: integer 0..100}`; does not implicitly complete a project. | `projects.update`; clients denied |
+| `GET /projects/{id}/team` | Team members with roles and assignment metadata. | `projects.assign`; company-admin manage-team policy |
+| `PUT /projects/{id}/team` | Full replacement `{members:[{user_id,assignment_type}]}`. Types: `member`, `supervisor`, `client`; only active same-company role-eligible users. | `projects.assign`; company-admin manage-team policy |
+| `GET /projects/{id}/overview` | Safe overview with policy-conditional budget. | `projects.view` plus project policy |
+
+Statuses are `planning`, `active`, `on_hold`, `completed`, and `cancelled`. Allowed transitions are planning→active/cancelled, active→on_hold/completed/cancelled, and on_hold→active/cancelled. Completed and cancelled are terminal. Generic create/update forms prohibit `company_id`, currency, ownership/audit fields, status, progress, members, and team.
+
 ## Personal account
 
 These endpoints require an authenticated active account but do not require company context, so both company users and Platform Super Admins can use them.

@@ -95,6 +95,14 @@ export const departmentsApi = {
 };
 export const projectsApi = {
   list: (params) => api.get("/v1/projects", { params }).then((r) => r.data),
+  get: (id) => api.get(`/v1/projects/${id}`).then((r) => unwrap(r)),
+  create: (payload) => api.post("/v1/projects", payload).then((r) => unwrap(r)),
+  update: (id, payload) => api.patch(`/v1/projects/${id}`, payload).then((r) => unwrap(r)),
+  remove: (id) => api.delete(`/v1/projects/${id}`).then((r) => unwrap(r)),
+  status: (id, status) => api.patch(`/v1/projects/${id}/status`, { status }).then((r) => unwrap(r)),
+  progress: (id, progress_percentage) => api.patch(`/v1/projects/${id}/progress`, { progress_percentage }).then((r) => unwrap(r)),
+  team: (id) => api.get(`/v1/projects/${id}/team`).then((r) => unwrap(r)),
+  updateTeam: (id, members) => api.put(`/v1/projects/${id}/team`, { members }).then((r) => unwrap(r)),
   overview: (id) =>
     api.get(`/v1/projects/${id}/overview`).then((r) => unwrap(r)),
 };
