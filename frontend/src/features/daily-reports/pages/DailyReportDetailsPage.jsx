@@ -11,12 +11,14 @@ import ReportStatusBadge from "../components/ReportStatusBadge";
 import { useDailyReportDetails } from "../hooks/useDailyReportDetails";
 import { useDailyReportMutation } from "../hooks/useDailyReports";
 import { formatDateTime, formatReportDate, humanize } from "../utils/reportFormatters";
+import { useReportPhotos } from "../../site-photos/hooks/useSitePhotos";
+import SitePhotoGallery from "../../site-photos/components/SitePhotoGallery";
 
 const hasRole = (user, name) => (user?.roles || []).some((r) => (typeof r === "string" ? r : r.name) === name);
 const Field = ({ label, children }) => <div><dt>{label}</dt><dd>{children || "—"}</dd></div>;
 export default function DailyReportDetailsPage() {
   const { id } = useParams(); const [params] = useSearchParams(); const projectId = params.get("project"); const navigate = useNavigate(); const { can, user } = useAuth();
-  const query = useDailyReportDetails(projectId, id); const mutate = useDailyReportMutation(({ action, payload }) => action(payload));
+  const query = useDailyReportDetails(projectId, id); const mutate = useDailyReportMutation(({ action, payload }) => action(payload)); const photos = useReportPhotos(projectId, id, can("photos.view"));
   const [deleting, setDeleting] = useState(false); const [reviewing, setReviewing] = useState(false); const [reviewAction, setReviewAction] = useState("approve"); const [notes, setNotes] = useState("");
   if (!projectId) return <AppAlert tone="danger">A project reference is required to load this report.</AppAlert>;
   if (query.isLoading) return <div role="status">Loading daily report…</div>;
@@ -35,6 +37,7 @@ export default function DailyReportDetailsPage() {
     <SectionCard title="Completed work"><div className="report-copy">{r.work_completed}</div>{r.work_in_progress && <><h3>Work in progress</h3><div className="report-copy">{r.work_in_progress}</div></>}</SectionCard>
     <SectionCard title="Issues and delays"><dl className="project-overview"><Field label="Issues">{r.issues}</Field><Field label="Delays">{r.delays}</Field><Field label="Delay reason">{r.delay_reason}</Field><Field label="General notes">{r.general_notes}</Field></dl></SectionCard>
     <SectionCard title="Report metadata"><dl className="project-overview"><Field label="Created">{formatDateTime(r.created_at)}</Field><Field label="Last updated">{formatDateTime(r.updated_at)}</Field><Field label="Submitted">{formatDateTime(r.submitted_at)}</Field>{!client && <><Field label="Reviewed">{formatDateTime(r.reviewed_at)}</Field><Field label="Review notes">{r.review_notes}</Field></>}</dl>{admin && can("site_reports.approve") && <div className="visibility-control"><AppSwitch label="Visible to assigned clients" checked={!!r.is_client_visible} disabled={r.status !== "approved" || mutate.isPending} onChange={(e) => run((value) => dailyReportsApi.visibility(projectId, id, value), e.target.checked ? "Report is now client-visible." : "Report is now internal.", e.target.checked)}/>{r.status !== "approved" && <small>Only approved reports can be client-visible.</small>}</div>}</SectionCard>
+    {can("photos.view") && <SectionCard title="Related site photos" action={!client && can("photos.create") ? <Link className="app-button primary" to={`/site-photos/upload?project=${projectId}`}>Upload photos</Link> : null}>{photos.error && <AppAlert tone="danger">{apiMessage(photos.error, "Related photos could not be loaded.")}</AppAlert>}<SitePhotoGallery photos={photos.data || []} projectId={projectId} loading={photos.isLoading}/></SectionCard>}
     <ConfirmDialog open={deleting} title="Delete daily report" message="Delete this active daily report?" busy={mutate.isPending} onClose={() => setDeleting(false)} onConfirm={remove}/>
     <AppModal open={reviewing} title="Review daily report" onClose={() => setReviewing(false)}><div className="review-actions"><label className="check-control"><input type="radio" name="review" checked={reviewAction === "approve"} onChange={() => setReviewAction("approve")}/><span>Approve report</span></label><label className="check-control"><input type="radio" name="review" checked={reviewAction === "request_changes"} onChange={() => setReviewAction("request_changes")}/><span>Request changes</span></label><AppTextarea label="Review notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows="4"/><div className="modal-actions"><AppButton variant="secondary" onClick={() => setReviewing(false)}>Cancel</AppButton><AppButton busy={mutate.isPending} onClick={review}>Save review</AppButton></div></div></AppModal>
   </div>;

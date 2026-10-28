@@ -54,6 +54,18 @@ const DailyReportsPage = lazy(() => import("../features/daily-reports/pages/Dail
 const CreateDailyReportPage = lazy(() => import("../features/daily-reports/pages/CreateDailyReportPage"));
 const DailyReportDetailsPage = lazy(() => import("../features/daily-reports/pages/DailyReportDetailsPage"));
 const EditDailyReportPage = lazy(() => import("../features/daily-reports/pages/EditDailyReportPage"));
+const SitePhotosPage = lazy(() => import("../features/site-photos/pages/SitePhotosPage"));
+const UploadSitePhotosPage = lazy(() => import("../features/site-photos/pages/UploadSitePhotosPage"));
+const SitePhotoDetailsPage = lazy(() => import("../features/site-photos/pages/SitePhotoDetailsPage"));
+const MaterialsPage = lazy(() => import("../features/materials/pages/MaterialsPage"));
+const MaterialDetailsPage = lazy(() => import("../features/materials/pages/MaterialDetailsPage"));
+const CreateMaterialPage = lazy(() => import("../features/materials/pages/MaterialFormPages").then((m) => ({ default: m.CreateMaterialPage })));
+const EditMaterialPage = lazy(() => import("../features/materials/pages/MaterialFormPages").then((m) => ({ default: m.EditMaterialPage })));
+const ProjectInventoryPage = lazy(() => import("../features/materials/pages/ProjectInventoryPage"));
+const MaterialRequestsPage = lazy(() => import("../features/material-requests/pages/MaterialRequestsPage"));
+const CreateMaterialRequestPage = lazy(() => import("../features/material-requests/pages/CreateMaterialRequestPage"));
+const MaterialRequestDetailsPage = lazy(() => import("../features/material-requests/pages/MaterialRequestDetailsPage"));
+const InventoryTransferPage = lazy(() => import("../features/material-requests/pages/InventoryTransferPage"));
 const LoadingPage = () => (
   <div className="page-container" role="status">
     <AppSkeleton /> Loading page…
@@ -161,6 +173,22 @@ export default function AppRoutes() {
         <Route element={<ProtectedRoute permission="site_reports.update" />}>
           <Route element={<WorkspaceLayout />}><Route path="/daily-reports/:id/edit" element={<EditDailyReportPage />} /></Route>
         </Route>
+        <Route element={<ProtectedRoute permission="photos.view" />}>
+          <Route element={<WorkspaceLayout />}>
+            <Route path="/site-photos" element={<SitePhotosPage />} />
+            <Route path="/site-photos/:id" element={<SitePhotoDetailsPage />} />
+          </Route>
+        </Route>
+        <Route element={<ProtectedRoute permission="photos.create" />}>
+          <Route element={<WorkspaceLayout />}><Route path="/site-photos/upload" element={<UploadSitePhotosPage />} /></Route>
+        </Route>
+        <Route element={<ProtectedRoute permission="materials.view" />}><Route element={<WorkspaceLayout />}><Route path="/materials" element={<MaterialsPage/>}/><Route path="/materials/:id" element={<MaterialDetailsPage/>}/></Route></Route>
+        <Route element={<ProtectedRoute permission="materials.create" />}><Route element={<WorkspaceLayout />}><Route path="/materials/new" element={<CreateMaterialPage/>}/></Route></Route>
+        <Route element={<ProtectedRoute permission="materials.update" />}><Route element={<WorkspaceLayout />}><Route path="/materials/:id/edit" element={<EditMaterialPage/>}/></Route></Route>
+        <Route element={<ProtectedRoute permission="inventory.view" />}><Route element={<WorkspaceLayout />}><Route path="/projects/:id/inventory" element={<ProjectInventoryPage/>}/></Route></Route>
+        <Route element={<ProtectedRoute permission="material_requests.view" />}><Route element={<WorkspaceLayout />}><Route path="/material-requests" element={<MaterialRequestsPage/>}/><Route path="/material-requests/:id" element={<MaterialRequestDetailsPage/>}/></Route></Route>
+        <Route element={<ProtectedRoute permission="material_requests.create" />}><Route element={<WorkspaceLayout />}><Route path="/material-requests/new" element={<CreateMaterialRequestPage/>}/></Route></Route>
+        <Route element={<ProtectedRoute permission="inventory.transfer" />}><Route element={<WorkspaceLayout />}><Route path="/inventory/transfers/new" element={<InventoryTransferPage/>}/></Route></Route>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

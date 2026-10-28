@@ -17,7 +17,7 @@ The active application is JavaScript/JSX only. Runtime modules use `.js`, React 
 - `src/App.jsx`: provider and router composition only.
 - `src/main.jsx`: application bootstrap and global stylesheet imports.
 
-The application currently has active features for auth, platform administration, dashboard, company, users, roles, departments, projects, daily reports, profile, and settings. Projects and daily reports own feature API exports, identity-scoped query hooks, runtime schemas, components, and lazy route pages. Empty feature placeholders are not created.
+The application currently has active features for auth, platform administration, dashboard, company, users, roles, departments, projects, daily reports, site photos, profile, and settings. Business features own API exports, identity-scoped query hooks, runtime schemas, components, and lazy route pages. Empty feature placeholders are not created.
 
 ## Routing and authorization
 
@@ -31,7 +31,12 @@ Project list/detail/team query keys include the authenticated company and user I
 
 Daily report query keys add the project ID because Laravel exposes only project-nested report APIs. `/daily-reports` requires a selected authorized project; details and edit URLs retain that project as a query parameter so the nested resource can be addressed without inventing a global endpoint. Create, update, submit, review, visibility, and delete mutations invalidate identity-scoped report, project, and dashboard caches.
 
+Site photo query keys likewise include company, user, and project identity. `/site-photos`, `/site-photos/upload`, and `/site-photos/:id` are lazy workspace routes. Private image bytes are requested through Laravel's authenticated file endpoint, converted to short-lived object URLs, and revoked on replacement/unmount. Project and report integrations query only their nested photo resources.
+
 ## Legacy boundary
+
+Materials use lazy catalog and project-inventory routes. Their query keys include company/user identity plus project and inventory scope; Laravel ledger balances remain authoritative.
+
 
 The old unrouted WowDash demo pages, layers, helpers, charts, duplicate services, and `MasterLayout` are preserved in `legacy-template/` outside `src`. Nothing in the maintained application imports that archive. It is excluded from active linting and bundling and can be inspected or selectively migrated later.
 

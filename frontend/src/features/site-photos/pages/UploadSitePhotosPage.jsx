@@ -1,0 +1,11 @@
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { toast } from "react-toastify";
+import { PageHeader, SectionCard } from "../../../components/ui/AppUI";
+import { AppAlert } from "../../../components/ui/Controls";
+import { apiMessage } from "../../../api/endpoints";
+import { useAuth } from "../../auth/context/AuthContext";
+import { useProjects } from "../../projects/hooks/useProjects";
+import { sitePhotosApi } from "../api/sitePhotosApi";
+import SitePhotoUploader from "../components/SitePhotoUploader";
+import { useSitePhotoMutation } from "../hooks/useSitePhotos";
+export default function UploadSitePhotosPage() { const { user } = useAuth(); const navigate = useNavigate(); const [params] = useSearchParams(); const preselected = params.get("project") || ""; const projectsQuery = useProjects({ page: 1, per_page: 100, sort: "name", direction: "asc" }); const mutation = useSitePhotoMutation(({ projectId, formData, batch, progress }) => batch ? sitePhotosApi.uploadBatch(projectId, formData, progress) : sitePhotosApi.upload(projectId, formData, progress)); const client = (user?.roles || []).some((x) => (typeof x === "string" ? x : x.name) === "client"); if (client) return <AppAlert tone="danger">Clients have read-only access to approved, client-visible site photos.</AppAlert>; const upload = async (projectId, formData, batch, progress) => { const result = await mutation.mutateAsync({ projectId, formData, batch, progress }); toast.success(batch ? `${result.length} site photos uploaded for review.` : "Site photo uploaded for review."); navigate(`/site-photos?project=${projectId}`); }; return <div className="phase2-page"><PageHeader title="Upload Site Photos" description="Upload protected construction images to an authorized project."/><SectionCard title="Photo upload">{projectsQuery.error && <AppAlert tone="danger">{apiMessage(projectsQuery.error, "Authorized projects could not be loaded.")}</AppAlert>}{projectsQuery.isLoading ? <div role="status">Loading projects…</div> : <SitePhotoUploader projects={projectsQuery.data?.data || []} fixedProjectId={preselected || undefined} onUpload={upload} onCancel={() => navigate(preselected ? `/site-photos?project=${preselected}` : "/site-photos")}/>}</SectionCard></div>; }

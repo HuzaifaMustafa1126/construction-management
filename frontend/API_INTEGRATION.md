@@ -188,6 +188,22 @@ All report routes are project-nested and tenant-scoped. The caller must be able 
 
 Content fields are `report_date`, `title`, `work_completed`, `work_in_progress`, `issues`, `delays`, `delay_reason`, `weather_conditions`, `general_notes`, `progress_percentage`, and `workers`. Worker types are `mason`, `helper`, `electrician`, `plumber`, `carpenter`, `painter`, `steel_fixer`, `operator`, and `other`; counts are nonnegative integers. The server owns company/project IDs, total, status, visibility, creator/submitter/reviewer fields, and timestamps. No past/future date restriction or report attachment contract exists.
 
+## Site photos
+
+All photo APIs are project-nested. `GET /projects/{id}/photos` supports caption search, exact/date-range filters, `time_category`, management-only `approval_status`, server sort, and pagination. Clients receive only approved, explicitly client-visible photos. There is no company-wide gallery endpoint.
+
+`POST /projects/{id}/photos` accepts multipart `photo`; `POST /projects/{id}/photos/batch` accepts `photos[]` with 1–10 files. Shared metadata is required `photo_date` and `time_category` (`morning|afternoon|evening`), plus nullable `caption` (255), `description` (5000), and same-project `daily_site_report_id`. Files must be images with JPG/JPEG, PNG, or WebP MIME/extension and at most 10,240 KB each. Laravel stores randomized names on the private local disk and owns tenant, project, uploader, storage, approval, visibility, and review fields.
+
+`GET /projects/{id}/photos/{photoId}` returns safe metadata. `GET .../{photoId}/file` requires authentication and policy visibility, streams private bytes with `private, no-store` and `nosniff`, and returns no storage URL. The frontend therefore fetches blobs through the bearer-authenticated client and uses revocable object URLs.
+
+`PATCH .../{photoId}` updates supported metadata. `POST .../{photoId}/review` accepts `approve|reject` with notes required for rejection. `PATCH .../{photoId}/visibility` controls approved-photo client visibility. `DELETE .../{photoId}` soft-deletes the record while retaining the private file. `GET /projects/{id}/daily-reports/{reportId}/photos` returns policy-safe associated photos.
+
+## Materials and project inventory
+
+`/materials` provides tenant-scoped catalog CRUD using category and measurement-unit IDs. Clients are denied catalog access and supervisors are view-only. `/projects/{id}/inventory` returns backend-calculated current stock, minimum levels, overview metrics, opening-stock state, and immutable transaction history. Quantities are decimal strings using unit precision; browser payloads never include company IDs or balances.
+
+Laravel also exposes supplier-backed delivery, consumption, adjustment, and inventory-reporting document workflows. Transfers do not exist. The current frontend does not simulate these multi-step posting workflows with direct balance edits.
+
 ## Personal account
 
 These endpoints require an authenticated active account but do not require company context, so both company users and Platform Super Admins can use them.
@@ -203,3 +219,7 @@ Validation errors are returned as JSON 422 field errors. Password values are nev
 ## Browser token security
 
 The current frontend stores the opaque Sanctum bearer token in `sessionStorage`. This limits persistence to the browser tab/session and the Axios interceptor clears it on protected 401 responses, but JavaScript-readable storage remains exposed if an XSS vulnerability executes in the origin. Active source does not use raw HTML injection or log credentials/tokens. Migrating to HttpOnly cookies is intentionally out of scope and would require coordinated Sanctum stateful-domain, CORS credential, CSRF-cookie, session-cookie, and Axios `withCredentials` changes.
+
+## S7 material requests and stock ledger
+
+Material request approval is non-posting. `POST /v1/material-requests/{id}/issue` posts positive `material_issued` quantities with direction `out`; `POST /v1/material-requests/{id}/return` posts `material_returned` with direction `in`. Both use UUID idempotency keys. `POST /v1/inventory-transfers` atomically posts a linked `transfer_out`/`transfer_in` pair. Do not retry a timed-out stock mutation with a new key; reload state or reuse the same key.

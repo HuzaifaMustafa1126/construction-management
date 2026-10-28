@@ -1,0 +1,3 @@
+import api from "../../../api/axiosClient";
+const unwrap = (r) => r?.data?.data ?? r?.data; const base = (id) => `/v1/projects/${id}/inventory`;
+export const inventoryApi = { list: (id, params) => api.get(base(id), { params }).then((r) => r.data), overview: (id) => api.get(`${base(id)}/overview`).then(unwrap), assign: (id, p) => api.post(base(id), p).then(unwrap), get: (id, inventoryId) => api.get(`${base(id)}/${inventoryId}`).then(unwrap), update: (id, inventoryId, p) => api.patch(`${base(id)}/${inventoryId}`, p).then(unwrap), openingStock: (id, inventoryId, p) => api.post(`${base(id)}/${inventoryId}/opening-stock`, p).then(unwrap), transactions: (id, inventoryId, params) => api.get(`${base(id)}/${inventoryId}/transactions`, { params }).then((r) => r.data) };

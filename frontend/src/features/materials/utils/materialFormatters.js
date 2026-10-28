@@ -1,0 +1,1 @@
+export const stockTone=(current,minimum)=>Number(current)===0?"danger":Number(current)<Number(minimum)?"warning":"success"; export const humanizeInventory=(v="")=>v.replaceAll("_"," ").replace(/\b\w/g,(x)=>x.toUpperCase());
