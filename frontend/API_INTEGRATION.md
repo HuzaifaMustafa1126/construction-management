@@ -171,6 +171,23 @@ All project routes require an authenticated operational company context. Listing
 
 Statuses are `planning`, `active`, `on_hold`, `completed`, and `cancelled`. Allowed transitions are planning→active/cancelled, active→on_hold/completed/cancelled, and on_hold→active/cancelled. Completed and cancelled are terminal. Generic create/update forms prohibit `company_id`, currency, ownership/audit fields, status, progress, members, and team.
 
+## Daily site reports
+
+All report routes are project-nested and tenant-scoped. The caller must be able to view the project; non-administrators only see assigned projects. There is no company-wide report list, summary, or dashboard endpoint, so the frontend selects one project and never derives company totals from paginated/project subsets.
+
+| Method/path | Contract |
+|---|---|
+| `GET /projects/{id}/daily-reports` | Filters: `search` (title), `date`, `date_from`, `date_to`, `status`, sort `report_date|created_at`, direction, page, per_page 1..100. Returns `{data,meta}`. Clients receive only approved, client-visible reports. |
+| `POST /projects/{id}/daily-reports` | Creates a draft. Required `report_date`, `title`, `work_completed`, and present `workers` array; optional content fields and progress. One active report per project/date. |
+| `GET /projects/{id}/daily-reports/{reportId}` | Returns one policy-visible report. Client resources omit review identity/notes. |
+| `PUT|PATCH /projects/{id}/daily-reports/{reportId}` | Updates supported content only while draft/changes-required and policy-editable. Workforce replacement recalculates the server-owned total. |
+| `POST .../{reportId}/submit` | Draft/changes-required to submitted; caller needs update permission and submit policy. |
+| `POST .../{reportId}/review` | `{action: approve|request_changes, review_notes?}`; notes required for changes. Creator cannot review own report. |
+| `PATCH .../{reportId}/visibility` | `{is_client_visible:boolean}`; company admin policy and approve permission; only approved reports may become visible. |
+| `DELETE .../{reportId}` | Company-admin policy soft deletion with delete permission. |
+
+Content fields are `report_date`, `title`, `work_completed`, `work_in_progress`, `issues`, `delays`, `delay_reason`, `weather_conditions`, `general_notes`, `progress_percentage`, and `workers`. Worker types are `mason`, `helper`, `electrician`, `plumber`, `carpenter`, `painter`, `steel_fixer`, `operator`, and `other`; counts are nonnegative integers. The server owns company/project IDs, total, status, visibility, creator/submitter/reviewer fields, and timestamps. No past/future date restriction or report attachment contract exists.
+
 ## Personal account
 
 These endpoints require an authenticated active account but do not require company context, so both company users and Platform Super Admins can use them.

@@ -17,7 +17,7 @@ The active application is JavaScript/JSX only. Runtime modules use `.js`, React 
 - `src/App.jsx`: provider and router composition only.
 - `src/main.jsx`: application bootstrap and global stylesheet imports.
 
-The application currently has active features for auth, platform administration, dashboard, company, users, roles, departments, projects, profile, and settings. Projects owns feature API exports, query hooks, runtime schemas, form/team/status components, and lazy route pages under `src/features/projects`. Empty feature placeholders are not created.
+The application currently has active features for auth, platform administration, dashboard, company, users, roles, departments, projects, daily reports, profile, and settings. Projects and daily reports own feature API exports, identity-scoped query hooks, runtime schemas, components, and lazy route pages. Empty feature placeholders are not created.
 
 ## Routing and authorization
 
@@ -28,6 +28,8 @@ The application currently has active features for auth, platform administration,
 `src/api/axiosClient.js` is the only active Axios instance. It attaches the session token and normalizes failures. `src/api/endpoints.js` defines shared resource calls without changing existing payloads or response handling. Auth and company identity live in `features/auth/context/AuthContext.jsx`; identity changes clear protected query cache.
 
 Project list/detail/team query keys include the authenticated company and user IDs. `/projects`, `/projects/new`, `/projects/:id`, and `/projects/:id/edit` are lazy company-workspace routes gated by their corresponding effective permission; Laravel policies additionally enforce assignment and tenant access.
+
+Daily report query keys add the project ID because Laravel exposes only project-nested report APIs. `/daily-reports` requires a selected authorized project; details and edit URLs retain that project as a query parameter so the nested resource can be addressed without inventing a global endpoint. Create, update, submit, review, visibility, and delete mutations invalidate identity-scoped report, project, and dashboard caches.
 
 ## Legacy boundary
 

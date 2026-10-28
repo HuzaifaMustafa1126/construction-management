@@ -50,6 +50,10 @@ const ProjectsPage = lazy(() => import("../features/projects/pages/ProjectsPage"
 const CreateProjectPage = lazy(() => import("../features/projects/pages/CreateProjectPage"));
 const ProjectDetailsPage = lazy(() => import("../features/projects/pages/ProjectDetailsPage"));
 const EditProjectPage = lazy(() => import("../features/projects/pages/EditProjectPage"));
+const DailyReportsPage = lazy(() => import("../features/daily-reports/pages/DailyReportsPage"));
+const CreateDailyReportPage = lazy(() => import("../features/daily-reports/pages/CreateDailyReportPage"));
+const DailyReportDetailsPage = lazy(() => import("../features/daily-reports/pages/DailyReportDetailsPage"));
+const EditDailyReportPage = lazy(() => import("../features/daily-reports/pages/EditDailyReportPage"));
 const LoadingPage = () => (
   <div className="page-container" role="status">
     <AppSkeleton /> Loading page…
@@ -144,6 +148,18 @@ export default function AppRoutes() {
           <Route element={<WorkspaceLayout />}>
             <Route path="/projects/:id/edit" element={<EditProjectPage />} />
           </Route>
+        </Route>
+        <Route element={<ProtectedRoute permission="site_reports.view" />}>
+          <Route element={<WorkspaceLayout />}>
+            <Route path="/daily-reports" element={<DailyReportsPage />} />
+            <Route path="/daily-reports/:id" element={<DailyReportDetailsPage />} />
+          </Route>
+        </Route>
+        <Route element={<ProtectedRoute permission="site_reports.create" />}>
+          <Route element={<WorkspaceLayout />}><Route path="/daily-reports/new" element={<CreateDailyReportPage />} /></Route>
+        </Route>
+        <Route element={<ProtectedRoute permission="site_reports.update" />}>
+          <Route element={<WorkspaceLayout />}><Route path="/daily-reports/:id/edit" element={<EditDailyReportPage />} /></Route>
         </Route>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

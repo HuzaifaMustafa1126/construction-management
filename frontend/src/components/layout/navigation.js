@@ -12,6 +12,7 @@ export const companyNavigation = [
         icon: "projects",
         permission: "projects.view",
       },
+      { label: "Daily Site Reports", route: "/daily-reports", icon: "reports", permission: "site_reports.view" },
     ],
   },
   {

@@ -27,3 +27,5 @@ Authenticated company and platform headers share identity dropdown behavior. For
 Shared modals receive focus when opened, close with Escape, restore prior focus when removed, and expose dialog semantics. Shared inputs, selects, and textareas connect field errors with `aria-describedby`. Status badges and overlays use semantic theme tokens in every supported mode/accent.
 
 Projects reuse `PageHeader`, `SectionCard`, shared form controls, `ConfirmDialog`, `AppBadge`, `AppAlert`, and the global `DataTable`. The table accepts optional `sortable` and `paginated` flags so server-owned project sorting and pagination are not misrepresented as whole-dataset client operations. Project-specific responsive grids consume semantic tokens from the existing theme only.
+
+Daily reports reuse the same primitives and global table. The only shared icon addition is the Heroicons Outline `ClipboardDocumentListIcon` registered as `reports`. Workforce rows, report metadata, review controls, and project report cards use semantic tokens and collapse to single-column controls on small screens; no alternate component or theme system was introduced.
