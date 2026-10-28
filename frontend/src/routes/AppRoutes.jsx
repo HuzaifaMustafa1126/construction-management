@@ -66,6 +66,17 @@ const MaterialRequestsPage = lazy(() => import("../features/material-requests/pa
 const CreateMaterialRequestPage = lazy(() => import("../features/material-requests/pages/CreateMaterialRequestPage"));
 const MaterialRequestDetailsPage = lazy(() => import("../features/material-requests/pages/MaterialRequestDetailsPage"));
 const InventoryTransferPage = lazy(() => import("../features/material-requests/pages/InventoryTransferPage"));
+const documentPage = (name) => lazy(() => import("../features/materials/pages/MaterialDocumentPages").then((module) => ({ default: module[name] })));
+const MaterialDeliveriesPage = documentPage("MaterialDeliveriesPage");
+const CreateMaterialDeliveryPage = documentPage("CreateMaterialDeliveryPage");
+const MaterialDeliveryDetailsPage = documentPage("MaterialDeliveryDetailsPage");
+const MaterialConsumptionsPage = documentPage("MaterialConsumptionsPage");
+const CreateMaterialConsumptionPage = documentPage("CreateMaterialConsumptionPage");
+const MaterialConsumptionDetailsPage = documentPage("MaterialConsumptionDetailsPage");
+const MaterialAdjustmentsPage = documentPage("MaterialAdjustmentsPage");
+const CreateMaterialAdjustmentPage = documentPage("CreateMaterialAdjustmentPage");
+const MaterialAdjustmentDetailsPage = documentPage("MaterialAdjustmentDetailsPage");
+const StockLedgerPage = lazy(() => import("../features/materials/pages/StockLedgerPage"));
 const LoadingPage = () => (
   <div className="page-container" role="status">
     <AppSkeleton /> Loading page…
@@ -183,6 +194,13 @@ export default function AppRoutes() {
           <Route element={<WorkspaceLayout />}><Route path="/site-photos/upload" element={<UploadSitePhotosPage />} /></Route>
         </Route>
         <Route element={<ProtectedRoute permission="materials.view" />}><Route element={<WorkspaceLayout />}><Route path="/materials" element={<MaterialsPage/>}/><Route path="/materials/:id" element={<MaterialDetailsPage/>}/></Route></Route>
+        <Route element={<ProtectedRoute permission="inventory_reports.view_movements" />}><Route element={<WorkspaceLayout />}><Route path="/materials/transactions" element={<StockLedgerPage/>}/></Route></Route>
+        <Route element={<ProtectedRoute permission="material_deliveries.view" />}><Route element={<WorkspaceLayout />}><Route path="/materials/deliveries" element={<MaterialDeliveriesPage/>}/><Route path="/materials/deliveries/:id" element={<MaterialDeliveryDetailsPage/>}/></Route></Route>
+        <Route element={<ProtectedRoute permission="material_deliveries.create" />}><Route element={<WorkspaceLayout />}><Route path="/materials/deliveries/new" element={<CreateMaterialDeliveryPage/>}/></Route></Route>
+        <Route element={<ProtectedRoute permission="material_consumptions.view" />}><Route element={<WorkspaceLayout />}><Route path="/materials/consumptions" element={<MaterialConsumptionsPage/>}/><Route path="/materials/consumptions/:id" element={<MaterialConsumptionDetailsPage/>}/></Route></Route>
+        <Route element={<ProtectedRoute permission="material_consumptions.create" />}><Route element={<WorkspaceLayout />}><Route path="/materials/consumptions/new" element={<CreateMaterialConsumptionPage/>}/></Route></Route>
+        <Route element={<ProtectedRoute permission="stock_adjustments.view" />}><Route element={<WorkspaceLayout />}><Route path="/materials/adjustments" element={<MaterialAdjustmentsPage/>}/><Route path="/materials/adjustments/:id" element={<MaterialAdjustmentDetailsPage/>}/></Route></Route>
+        <Route element={<ProtectedRoute permission="stock_adjustments.create" />}><Route element={<WorkspaceLayout />}><Route path="/materials/adjustments/new" element={<CreateMaterialAdjustmentPage/>}/></Route></Route>
         <Route element={<ProtectedRoute permission="materials.create" />}><Route element={<WorkspaceLayout />}><Route path="/materials/new" element={<CreateMaterialPage/>}/></Route></Route>
         <Route element={<ProtectedRoute permission="materials.update" />}><Route element={<WorkspaceLayout />}><Route path="/materials/:id/edit" element={<EditMaterialPage/>}/></Route></Route>
         <Route element={<ProtectedRoute permission="inventory.view" />}><Route element={<WorkspaceLayout />}><Route path="/projects/:id/inventory" element={<ProjectInventoryPage/>}/></Route></Route>

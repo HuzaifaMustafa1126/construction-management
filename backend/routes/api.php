@@ -101,6 +101,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('/projects/{id}/inventory-reports/current-stock', [InventoryReportController::class, 'currentStock']);
                 Route::get('/projects/{id}/inventory-reports/alerts', [InventoryReportController::class, 'alerts']);
                 Route::get('/projects/{id}/inventory-reports/movements', [InventoryReportController::class, 'movements']);
+                Route::get('/projects/{id}/inventory-reports/reconciliation', [InventoryReportController::class, 'reconciliation']);
                 Route::get('/projects/{id}/inventory-reports/received-vs-consumed', [InventoryReportController::class, 'receivedVsConsumed']);
                 Route::get('/projects/{id}/inventory-reports/wastage', [InventoryReportController::class, 'wastage']);
                 Route::get('/projects/{id}/material-deliveries', [MaterialDeliveryController::class, 'index']);

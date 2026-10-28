@@ -57,4 +57,9 @@ class InventoryTransaction extends Model
     {
         return $this->belongsTo(MaterialStockAdjustmentItem::class);
     }
+
+    public function materialRequestItem(): BelongsTo
+    {
+        return $this->belongsTo(MaterialRequestItem::class);
+    }
 }

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { projectsApi } from "../../../api/endpoints";
+import api from "../../../api/axiosClient";
 import { useAuth, useCompany } from "../../auth/context/AuthContext";
 import {
   AppAlert,
@@ -42,6 +43,7 @@ export default function CompanyDashboard() {
     enabled: !!company && can("projects.view"),
   });
   const rows = projects.data?.data || [];
+  const inventory = useQuery({ queryKey: ["dashboard", company?.id, user?.id, "inventory-overview"], queryFn: () => api.get("/v1/inventory-reports/overview").then((response) => response.data.data), enabled: !!company && can("inventory_reports.view_company"), retry: false });
   const total = projects.data?.meta?.total;
   const roles = roleNames(user);
   const audience = roles.includes("site_supervisor")
@@ -89,6 +91,7 @@ export default function CompanyDashboard() {
               }
               value={projects.isLoading ? "…" : (total ?? 0)}
             />
+            {can("inventory_reports.view_company") && <><StatCard label="Low-stock materials" value={inventory.isLoading ? "…" : (inventory.data?.low_stock_count ?? "—")}/><StatCard label="Out-of-stock materials" value={inventory.isLoading ? "…" : (inventory.data?.out_of_stock_count ?? "—")}/></>}
           </div>
           <SectionCard
             title={

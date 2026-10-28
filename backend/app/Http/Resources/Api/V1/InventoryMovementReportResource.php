@@ -27,6 +27,14 @@ class InventoryMovementReportResource extends JsonResource
             return ['stock_adjustment', $this->stockAdjustmentItem->adjustment->id, $this->stockAdjustmentItem->adjustment->adjustment_number, $this->stockAdjustmentItem->reason_code];
         }
 
+        if ($this->materialRequestItem?->request) {
+            return ['material_request', $this->materialRequestItem->request->id, $this->materialRequestItem->request->request_number, null];
+        }
+
+        if (in_array($this->transaction_type, ['transfer_in', 'transfer_out'], true)) {
+            return ['inventory_transfer', $this->reference_id, null, null];
+        }
+
         return ['opening_stock', null, null, null];
     }
 

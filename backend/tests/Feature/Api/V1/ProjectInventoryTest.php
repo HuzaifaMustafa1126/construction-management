@@ -133,6 +133,9 @@ class ProjectInventoryTest extends TestCase
         $this->opening($inventory, '5.125');
         $token = $this->token($this->admin);
         $this->withToken($token)->getJson($this->url().'?search=MAT&material_category_id='.$this->material->material_category_id.'&material_status=1&low_stock=1&per_page=1&sort=material_name')->assertOk()->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.current_stock', '5.125');
+        $this->withToken($token)->getJson($this->url().'?stock_status=low_stock')->assertOk()->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.id', $inventory->id);
+        $this->withToken($token)->getJson($this->url().'?stock_status=out_of_stock')->assertOk()->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.id', $other->id);
+        $this->withToken($token)->getJson($this->url().'?stock_status=good')->assertOk()->assertJsonPath('meta.total', 0);
         $this->withToken($token)->getJson($this->itemUrl($inventory))->assertOk()->assertJsonPath('data.current_stock', '5.125');
         $this->withToken($token)->getJson($this->itemUrl($inventory).'/transactions?transaction_type=opening_stock&date_from=2026-10-01&date_to=2026-10-31')->assertOk()->assertJsonPath('meta.total', 1);
         $this->withToken($token)->getJson($this->url().'/overview')->assertOk()->assertJsonPath('data.total_assigned_materials', 2)->assertJsonPath('data.materials_with_opening_stock', 1)->assertJsonPath('data.materials_without_opening_stock', 1)->assertJsonPath('data.materials_below_minimum_stock', 1)->assertJsonPath('data.materials_with_zero_stock', 1);

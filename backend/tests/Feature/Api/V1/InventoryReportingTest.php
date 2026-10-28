@@ -93,6 +93,17 @@ class InventoryReportingTest extends TestCase
         $this->getReport('current-stock?start_date=2026-10-10&end_date=2026-10-01')->assertUnprocessable();
     }
 
+    public function test_reconciliation_reports_exact_signed_ledger_balance_without_mutation(): void
+    {
+        $response = $this->getReport('reconciliation?per_page=100')->assertOk()->assertJsonPath('meta.total', 3);
+        $cement = collect($response->json('data'))->firstWhere('material.code', 'CEM');
+        $this->assertSame('13.3000', $cement['available_stock']);
+        $this->assertSame('13.3000', $cement['ledger_sum']);
+        $this->assertSame('0.0000', $cement['difference']);
+        $this->assertTrue($cement['is_reconciled']);
+        $this->assertDatabaseCount('inventory_transactions', 9);
+    }
+
     public function test_overview_and_dynamic_alerts_classify_healthy_empty_and_negative_stock(): void
     {
         $this->getReport('overview')->assertOk()->assertJsonPath('data.total_active_inventory_items', 3)->assertJsonPath('data.low_stock_count', 1)->assertJsonPath('data.out_of_stock_count', 1)->assertJsonPath('data.negative_stock_anomaly_count', 1)->assertJsonCount(9, 'data.recent_movements');

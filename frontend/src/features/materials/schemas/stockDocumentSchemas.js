@@ -1,0 +1,6 @@
+import { z } from "zod";
+const quantity = z.string().trim().regex(/^\d+(\.\d{1,4})?$/, "Use a positive quantity with up to four decimal places").refine((value) => Number(value) > 0, "Quantity must be greater than zero");
+const item = z.object({ project_inventory_id: z.coerce.number().int().positive("Select a material"), quantity, notes: z.string().max(5000).optional() });
+export const deliverySchema = z.object({ supplier_id: z.coerce.number().int().positive("Select a supplier"), delivery_date: z.string().min(1), supplier_invoice_number: z.string().max(255).optional(), vehicle_number: z.string().max(100).optional(), delivery_note: z.string().max(5000).optional(), items: z.array(item).min(1) });
+export const consumptionSchema = z.object({ consumption_date: z.string().min(1), purpose: z.string().max(255).optional(), work_location: z.string().max(255).optional(), notes: z.string().max(5000).optional(), items: z.array(item).min(1) });
+export const adjustmentSchema = z.object({ adjustment_date: z.string().min(1), reason: z.string().max(255).optional(), notes: z.string().max(5000).optional(), items: z.array(item.extend({ adjustment_type: z.enum(["adjustment_in", "adjustment_out", "material_wastage"]), reason_code: z.enum(["physical_count_difference", "damage", "breakage", "theft", "expiry", "site_loss", "recording_error", "other"]) })).min(1) });

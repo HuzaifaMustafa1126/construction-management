@@ -39,6 +39,13 @@ class ProjectInventoryController extends Controller
             $q->whereHas('material', fn ($x) => $x->where('is_active', $v['material_status']));
         }if (($v['low_stock'] ?? false)) {
             $q->whereRaw('('.$this->balanceSql().') < project_inventories.minimum_stock_level');
+        }if ($status = $v['stock_status'] ?? null) {
+            $balance = '('.$this->balanceSql().')';
+            match ($status) {
+                'out_of_stock' => $q->whereRaw("{$balance} = 0"),
+                'low_stock' => $q->whereRaw("{$balance} > 0 and {$balance} <= project_inventories.minimum_stock_level"),
+                'good' => $q->whereRaw("{$balance} > project_inventories.minimum_stock_level"),
+            };
         }$sort = $v['sort'] ?? 'material_name';
         if ($sort === 'material_name') {
             $q->orderBy(Material::select('name')->whereColumn('materials.id', 'project_inventories.material_id'), $v['direction'] ?? 'asc');
@@ -159,7 +166,7 @@ class ProjectInventoryController extends Controller
         }$rows = $this->balanced(ProjectInventory::query()->forCompany($t->companyId())->where('project_id', $p->id))->get(['project_inventories.*']);
         $opening = $rows->filter(fn ($i) => (bool) $i->opening_stock_recorded)->count();
         $zero = $rows->filter(fn ($i) => $this->compare($i->current_stock, '0') === 0)->count();
-        $low = $rows->filter(fn ($i) => $this->compare($i->current_stock, $i->minimum_stock_level) < 0)->count();
+        $low = $rows->filter(fn ($i) => $this->compare($i->current_stock, '0') > 0 && $this->compare($i->current_stock, $i->minimum_stock_level) <= 0)->count();
 
         return response()->json(['data' => ['total_assigned_materials' => $rows->count(), 'materials_with_opening_stock' => $opening, 'materials_without_opening_stock' => $rows->count() - $opening, 'materials_below_minimum_stock' => $low, 'materials_with_zero_stock' => $zero]]);
     }

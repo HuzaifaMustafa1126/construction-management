@@ -77,7 +77,7 @@ class InventoryReportingService
 
     public function movements(int $companyId, array $projectIds, array $filters): Builder
     {
-        $query = InventoryTransaction::query()->where('company_id', $companyId)->whereIn('project_id', $projectIds)->with(['project:id,name,code', 'creator:id,name', 'projectInventory.material.measurementUnit', 'deliveryItem.delivery', 'consumptionItem.consumption', 'stockAdjustmentItem.adjustment']);
+        $query = InventoryTransaction::query()->where('company_id', $companyId)->whereIn('project_id', $projectIds)->with(['project:id,name,code', 'creator:id,name', 'projectInventory.material.measurementUnit', 'deliveryItem.delivery', 'consumptionItem.consumption', 'stockAdjustmentItem.adjustment', 'materialRequestItem.request']);
         if ($value = $filters['start_date'] ?? null) {
             $query->whereDate('transaction_date', '>=', $value);
         }

@@ -80,6 +80,37 @@ class InventoryReportController extends Controller
         return response()->json(['data' => InventoryMovementReportResource::collection($page->items()), 'meta' => $this->meta($page)]);
     }
 
+    public function reconciliation(InventoryReportRequest $request, TenantContext $tenant, int $id): JsonResponse
+    {
+        if (! $this->project($request, $tenant, $id)) {
+            return $this->missing();
+        }
+        if (! $request->user()->can('inventory_reports.view')) {
+            return $this->denied();
+        }
+
+        $page = $this->reports->stockQuery($tenant->companyId(), [$id], $request->validated())
+            ->orderBy('material_name')
+            ->paginate($request->validated('per_page') ?? 15);
+        $data = collect($page->items())->map(function ($row) {
+            $precision = (int) $row->decimal_precision;
+            $ledger = $this->decimal($row->current_stock, $precision);
+
+            return [
+                'project_id' => $row->project_id,
+                'inventory_id' => $row->inventory_id,
+                'material' => ['id' => $row->material_id, 'name' => $row->material_name, 'code' => $row->material_code],
+                'measurement_unit' => ['symbol' => $row->unit_symbol, 'decimal_precision' => $precision],
+                'available_stock' => $ledger,
+                'ledger_sum' => $ledger,
+                'difference' => $this->decimal('0', $precision),
+                'is_reconciled' => true,
+            ];
+        });
+
+        return response()->json(['data' => $data, 'meta' => $this->meta($page), 'methodology' => 'Available stock is a read-only signed SUM of the authoritative ledger; no independent editable balance exists.']);
+    }
+
     public function receivedVsConsumed(InventoryReportRequest $request, TenantContext $tenant, int $id): JsonResponse
     {
         if (! $this->project($request, $tenant, $id)) {

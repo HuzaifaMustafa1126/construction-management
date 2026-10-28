@@ -16,6 +16,10 @@ export const companyNavigation = [
       { label: "Site Photos", route: "/site-photos", icon: "photos", permission: "photos.view" },
       { label: "Materials", route: "/materials", icon: "materials", permission: "materials.view" },
       { label: "Material Requests", route: "/material-requests", icon: "reports", permission: "material_requests.view" },
+      { label: "Stock Ledger", route: "/materials/transactions", icon: "database", permission: "inventory_reports.view_movements" },
+      { label: "Material Deliveries", route: "/materials/deliveries", icon: "materials", permission: "material_deliveries.view" },
+      { label: "Direct Consumption", route: "/materials/consumptions", icon: "materials", permission: "material_consumptions.view" },
+      { label: "Stock Adjustments", route: "/materials/adjustments", icon: "settings", permission: "stock_adjustments.view" },
     ],
   },
   {
