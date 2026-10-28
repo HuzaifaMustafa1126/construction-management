@@ -13,7 +13,9 @@ const displayName = (user) =>
 
 const roleName = (user) => {
   const role = user?.roles?.[0];
-  return typeof role === "string" ? role : role?.name || user?.role || "Company user";
+  return typeof role === "string"
+    ? role
+    : role?.name || user?.role || "Company user";
 };
 
 export default function WorkspaceLayout() {
@@ -24,9 +26,10 @@ export default function WorkspaceLayout() {
   const location = useLocation();
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
-  const current = companyNavigation
-    .flatMap((group) => group.items)
-    .find((item) => item.route === location.pathname)?.label || "Workspace";
+  const current =
+    companyNavigation
+      .flatMap((group) => group.items)
+      .find((item) => item.route === location.pathname)?.label || "Workspace";
 
   const signOut = async () => {
     setBusy(true);
@@ -38,19 +41,38 @@ export default function WorkspaceLayout() {
   };
 
   return (
-    <div className={`dashboard-wrapper ${open ? "sidebar-open" : ""} ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
-      <button className="workspace-backdrop" aria-label="Close navigation" onClick={() => setOpen(false)} />
+    <div
+      className={`dashboard-wrapper ${open ? "sidebar-open" : ""} ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}
+    >
+      <button
+        className="workspace-backdrop"
+        aria-label="Close navigation"
+        onClick={() => setOpen(false)}
+      />
       <aside className="sidebar" aria-label="Company navigation">
-        <div className="sidebar-logo px-24 py-20"><strong>{company?.name || "Company workspace"}</strong></div>
+        <div className="sidebar-logo px-24 py-20">
+          <strong>{company?.name || "Company workspace"}</strong>
+        </div>
         <nav className="sidebar-menu px-12">
           {companyNavigation.map((group) => (
             <section className="nav-group" key={group.label}>
               <small>{group.label}</small>
-              {group.items.filter((item) => can(item.permission)).map((item) => (
-                <NavLink key={item.route} to={item.route} onClick={() => setOpen(false)} className={({ isActive }) => isActive ? "active-page" : ""} title={item.label}>
-                  <AppIcon name={item.icon} /><span>{item.label}</span>
-                </NavLink>
-              ))}
+              {group.items
+                .filter((item) => can(item.permission))
+                .map((item) => (
+                  <NavLink
+                    key={item.route}
+                    to={item.route}
+                    onClick={() => setOpen(false)}
+                    className={({ isActive }) =>
+                      isActive ? "active-page" : ""
+                    }
+                    title={item.label}
+                  >
+                    <AppIcon name={item.icon} />
+                    <span>{item.label}</span>
+                  </NavLink>
+                ))}
             </section>
           ))}
         </nav>
@@ -58,19 +80,42 @@ export default function WorkspaceLayout() {
       <main className="dashboard-main">
         <header className="navbar-header">
           <div className="workspace-heading">
-            <AppButton variant="ghost" aria-label="Toggle navigation" onClick={() => setOpen((value) => !value)}><AppIcon name="menu" /></AppButton>
-            <div><small>Workspace / {current}</small><strong className="d-block">{company?.name || "Workspace"}</strong></div>
+            <AppButton
+              variant="ghost"
+              aria-label="Toggle navigation"
+              onClick={() => setOpen((value) => !value)}
+            >
+              <AppIcon name="menu" />
+            </AppButton>
+            <div>
+              <small>Workspace / {current}</small>
+              <strong className="d-block">
+                {company?.name || "Workspace"}
+              </strong>
+            </div>
           </div>
           <div className="workspace-user">
             <AppDropdown label={displayName(user)}>
-              <div className="profile-menu-identity"><strong>{displayName(user)}</strong><small>{user?.email}</small><small>{roleName(user)}</small></div>
-              <NavLink to="/profile"><AppIcon name="profile" /> My profile</NavLink>
-              <NavLink to="/settings"><AppIcon name="settings" /> Settings</NavLink>
-              <AppButton variant="ghost" busy={busy} onClick={signOut}><AppIcon name="logout" /> Log out</AppButton>
+              <div className="profile-menu-identity">
+                <strong>{displayName(user)}</strong>
+                <small>{user?.email}</small>
+                <small>{roleName(user)}</small>
+              </div>
+              <NavLink to="/profile">
+                <AppIcon name="profile" /> My profile
+              </NavLink>
+              <NavLink to="/settings">
+                <AppIcon name="settings" /> Settings
+              </NavLink>
+              <AppButton variant="ghost" busy={busy} onClick={signOut}>
+                <AppIcon name="logout" /> Log out
+              </AppButton>
             </AppDropdown>
           </div>
         </header>
-        <div className="dashboard-main-body phase2-page"><Outlet /></div>
+        <div className="dashboard-main-body phase2-page">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

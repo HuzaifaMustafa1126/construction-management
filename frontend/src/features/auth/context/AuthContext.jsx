@@ -49,16 +49,20 @@ export function AuthProvider({ children }) {
       throw error;
     }
   }, []);
-  const establishCompany = useCallback(async (identity) => {
-    try { return await refreshCompany(); }
-    catch (error) {
-      if (error?.status === 403 && identity?.company) {
-        setCompany(identity.company);
-        return identity.company;
+  const establishCompany = useCallback(
+    async (identity) => {
+      try {
+        return await refreshCompany();
+      } catch (error) {
+        if (error?.status === 403 && identity?.company) {
+          setCompany(identity.company);
+          return identity.company;
+        }
+        throw error;
       }
-      throw error;
-    }
-  }, [refreshCompany]);
+    },
+    [refreshCompany],
+  );
   useEffect(() => {
     const init = async () => {
       if (!sessionStorage.getItem(tokenKey)) {

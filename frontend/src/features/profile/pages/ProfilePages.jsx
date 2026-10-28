@@ -1,16 +1,258 @@
 /* eslint-disable react-hooks/exhaustive-deps -- React Hook Form's reset method is stable; depending on the form object causes reset loops. */
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "react-toastify";
-import { apiMessage,applyServerErrors,authApi } from "../../../api/endpoints";
-import { useAuth,useCompany } from "../../auth/context/AuthContext";
-import { AppBadge,AppButton,AppIcon,AppInput,PageHeader,SectionCard } from "../../../components/ui/AppUI";
-const profileSchema=z.object({first_name:z.string().min(1).max(100),last_name:z.string().min(1).max(100),email:z.string().email().max(255),phone:z.string().max(30).optional()});
-const passwordSchema=z.object({current_password:z.string().min(1,"Current password is required"),password:z.string().min(8,"Use at least 8 characters").regex(/[A-Za-z]/,"Include a letter").regex(/[0-9]/,"Include a number"),password_confirmation:z.string()}).refine(v=>v.password===v.password_confirmation,{path:["password_confirmation"],message:"Passwords do not match"});
-const fullName=u=>u?.name||[u?.first_name,u?.last_name].filter(Boolean).join(" ")||"User";const role=u=>u?.is_platform_admin?"Platform Super Admin":(u?.roles||[]).map(x=>typeof x==="string"?x:x.name).join(", ")||u?.role||"Company user";
-export function ProfilePage(){const{user,refreshUser}=useAuth();const{company}=useCompany();const qc=useQueryClient();const[editing,setEditing]=useState(false),[problem,setProblem]=useState("");const form=useForm({resolver:zodResolver(profileSchema)});useEffect(()=>form.reset({first_name:user?.first_name||"",last_name:user?.last_name||"",email:user?.email||"",phone:user?.phone||""}),[user,form.reset]);const save=form.handleSubmit(async values=>{setProblem("");try{await authApi.updateMe(values);await refreshUser();await qc.invalidateQueries({queryKey:["profile",user?.id]});setEditing(false);toast.success("Profile updated.")}catch(error){applyServerErrors(error,form.setError);setProblem(apiMessage(error))}});return <><PageHeader title="My profile" description="Manage your personal account information." action={!editing?<AppButton onClick={()=>setEditing(true)}><AppIcon name="edit"/> Edit profile</AppButton>:null}/>{problem&&<div className="error-banner">{problem}</div>}<SectionCard title="Profile summary"><div className="profile-grid"><div className="profile-item"><small>Name</small><strong>{fullName(user)}</strong></div><div className="profile-item"><small>Email</small><strong>{user?.email}</strong></div><div className="profile-item"><small>Phone</small><strong>{user?.phone||"—"}</strong></div><div className="profile-item"><small>Identity</small><strong>{role(user)}</strong></div>{!user?.is_platform_admin&&<div className="profile-item"><small>Company</small><strong>{company?.name||user?.company?.name||"—"}</strong></div>}<div className="profile-item"><small>Status</small><AppBadge tone={user?.status==="Active"?"success":"warning"}>{user?.status||"—"}</AppBadge></div></div></SectionCard>{editing&&<SectionCard title="Personal information"><form className="form-grid" onSubmit={save}><AppInput label="First name" error={form.formState.errors.first_name?.message}{...form.register("first_name")}/><AppInput label="Last name" error={form.formState.errors.last_name?.message}{...form.register("last_name")}/><AppInput label="Email" type="email" error={form.formState.errors.email?.message}{...form.register("email")}/><AppInput label="Phone" error={form.formState.errors.phone?.message}{...form.register("phone")}/><div className="button-group full"><AppButton busy={form.formState.isSubmitting}>Save changes</AppButton><AppButton type="button" variant="secondary" onClick={()=>{form.reset();setEditing(false)}}>Cancel</AppButton></div></form></SectionCard>}<SectionCard title="Security"><Link className="app-button secondary" to={user?.is_platform_admin?"/platform/profile/security":"/profile/security"}><AppIcon name="security"/> Change password</Link></SectionCard></>}
-export function ProfileSecurityPage(){const{user}=useAuth();const[show,setShow]=useState(false),[problem,setProblem]=useState("");const form=useForm({resolver:zodResolver(passwordSchema),defaultValues:{current_password:"",password:"",password_confirmation:""}});const save=form.handleSubmit(async values=>{setProblem("");try{await authApi.updatePassword(values);form.reset();toast.success("Password changed. Other sessions were signed out.")}catch(error){applyServerErrors(error,form.setError);setProblem(apiMessage(error))}});return <><PageHeader title="Change password" description="The current session stays active; other API tokens are revoked."/>{problem&&<div className="error-banner">{problem}</div>}<SectionCard title="Security"><form className="form-grid" onSubmit={save}><AppInput label="Current password" type={show?"text":"password"} autoComplete="current-password" error={form.formState.errors.current_password?.message}{...form.register("current_password")}/><AppInput label="New password" type={show?"text":"password"} autoComplete="new-password" error={form.formState.errors.password?.message}{...form.register("password")}/><AppInput label="Confirm new password" type={show?"text":"password"} autoComplete="new-password" error={form.formState.errors.password_confirmation?.message}{...form.register("password_confirmation")}/><label className="permission-check full"><input type="checkbox" checked={show} onChange={e=>setShow(e.target.checked)}/>Show passwords</label><div className="button-group full"><AppButton busy={form.formState.isSubmitting}>Change password</AppButton><Link className="app-button secondary" to={user?.is_platform_admin?"/platform/profile":"/profile"}>Cancel</Link></div></form></SectionCard></>}
+import { apiMessage, applyServerErrors, authApi } from "../../../api/endpoints";
+import { useAuth, useCompany } from "../../auth/context/AuthContext";
+import {
+  AppBadge,
+  AppButton,
+  AppIcon,
+  AppInput,
+  PageHeader,
+  SectionCard,
+} from "../../../components/ui/AppUI";
+const profileSchema = z.object({
+  first_name: z.string().min(1).max(100),
+  last_name: z.string().min(1).max(100),
+  email: z.string().email().max(255),
+  phone: z.string().max(30).optional(),
+});
+const passwordSchema = z
+  .object({
+    current_password: z.string().min(1, "Current password is required"),
+    password: z
+      .string()
+      .min(8, "Use at least 8 characters")
+      .regex(/[A-Za-z]/, "Include a letter")
+      .regex(/[0-9]/, "Include a number"),
+    password_confirmation: z.string(),
+  })
+  .refine((v) => v.password === v.password_confirmation, {
+    path: ["password_confirmation"],
+    message: "Passwords do not match",
+  });
+const fullName = (u) =>
+  u?.name || [u?.first_name, u?.last_name].filter(Boolean).join(" ") || "User";
+const role = (u) =>
+  u?.is_platform_admin
+    ? "Platform Super Admin"
+    : (u?.roles || [])
+        .map((x) => (typeof x === "string" ? x : x.name))
+        .join(", ") ||
+      u?.role ||
+      "Company user";
+export function ProfilePage() {
+  const { user, refreshUser } = useAuth();
+  const { company } = useCompany();
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState(false),
+    [problem, setProblem] = useState("");
+  const form = useForm({ resolver: zodResolver(profileSchema) });
+  useEffect(
+    () =>
+      form.reset({
+        first_name: user?.first_name || "",
+        last_name: user?.last_name || "",
+        email: user?.email || "",
+        phone: user?.phone || "",
+      }),
+    [user, form.reset],
+  );
+  const save = form.handleSubmit(async (values) => {
+    setProblem("");
+    try {
+      await authApi.updateMe(values);
+      await refreshUser();
+      await qc.invalidateQueries({ queryKey: ["profile", user?.id] });
+      setEditing(false);
+      toast.success("Profile updated.");
+    } catch (error) {
+      applyServerErrors(error, form.setError);
+      setProblem(apiMessage(error));
+    }
+  });
+  return (
+    <>
+      <PageHeader
+        title="My profile"
+        description="Manage your personal account information."
+        action={
+          !editing ? (
+            <AppButton onClick={() => setEditing(true)}>
+              <AppIcon name="edit" /> Edit profile
+            </AppButton>
+          ) : null
+        }
+      />
+      {problem && <div className="error-banner">{problem}</div>}
+      <SectionCard title="Profile summary">
+        <div className="profile-grid">
+          <div className="profile-item">
+            <small>Name</small>
+            <strong>{fullName(user)}</strong>
+          </div>
+          <div className="profile-item">
+            <small>Email</small>
+            <strong>{user?.email}</strong>
+          </div>
+          <div className="profile-item">
+            <small>Phone</small>
+            <strong>{user?.phone || "—"}</strong>
+          </div>
+          <div className="profile-item">
+            <small>Identity</small>
+            <strong>{role(user)}</strong>
+          </div>
+          {!user?.is_platform_admin && (
+            <div className="profile-item">
+              <small>Company</small>
+              <strong>{company?.name || user?.company?.name || "—"}</strong>
+            </div>
+          )}
+          <div className="profile-item">
+            <small>Status</small>
+            <AppBadge tone={user?.status === "Active" ? "success" : "warning"}>
+              {user?.status || "—"}
+            </AppBadge>
+          </div>
+        </div>
+      </SectionCard>
+      {editing && (
+        <SectionCard title="Personal information">
+          <form className="form-grid" onSubmit={save}>
+            <AppInput
+              label="First name"
+              error={form.formState.errors.first_name?.message}
+              {...form.register("first_name")}
+            />
+            <AppInput
+              label="Last name"
+              error={form.formState.errors.last_name?.message}
+              {...form.register("last_name")}
+            />
+            <AppInput
+              label="Email"
+              type="email"
+              error={form.formState.errors.email?.message}
+              {...form.register("email")}
+            />
+            <AppInput
+              label="Phone"
+              error={form.formState.errors.phone?.message}
+              {...form.register("phone")}
+            />
+            <div className="button-group full">
+              <AppButton busy={form.formState.isSubmitting}>
+                Save changes
+              </AppButton>
+              <AppButton
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  form.reset();
+                  setEditing(false);
+                }}
+              >
+                Cancel
+              </AppButton>
+            </div>
+          </form>
+        </SectionCard>
+      )}
+      <SectionCard title="Security">
+        <Link
+          className="app-button secondary"
+          to={
+            user?.is_platform_admin
+              ? "/platform/profile/security"
+              : "/profile/security"
+          }
+        >
+          <AppIcon name="security" /> Change password
+        </Link>
+      </SectionCard>
+    </>
+  );
+}
+export function ProfileSecurityPage() {
+  const { user } = useAuth();
+  const [show, setShow] = useState(false),
+    [problem, setProblem] = useState("");
+  const form = useForm({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: {
+      current_password: "",
+      password: "",
+      password_confirmation: "",
+    },
+  });
+  const save = form.handleSubmit(async (values) => {
+    setProblem("");
+    try {
+      await authApi.updatePassword(values);
+      form.reset();
+      toast.success("Password changed. Other sessions were signed out.");
+    } catch (error) {
+      applyServerErrors(error, form.setError);
+      setProblem(apiMessage(error));
+    }
+  });
+  return (
+    <>
+      <PageHeader
+        title="Change password"
+        description="The current session stays active; other API tokens are revoked."
+      />
+      {problem && <div className="error-banner">{problem}</div>}
+      <SectionCard title="Security">
+        <form className="form-grid" onSubmit={save}>
+          <AppInput
+            label="Current password"
+            type={show ? "text" : "password"}
+            autoComplete="current-password"
+            error={form.formState.errors.current_password?.message}
+            {...form.register("current_password")}
+          />
+          <AppInput
+            label="New password"
+            type={show ? "text" : "password"}
+            autoComplete="new-password"
+            error={form.formState.errors.password?.message}
+            {...form.register("password")}
+          />
+          <AppInput
+            label="Confirm new password"
+            type={show ? "text" : "password"}
+            autoComplete="new-password"
+            error={form.formState.errors.password_confirmation?.message}
+            {...form.register("password_confirmation")}
+          />
+          <label className="permission-check full">
+            <input
+              type="checkbox"
+              checked={show}
+              onChange={(e) => setShow(e.target.checked)}
+            />
+            Show passwords
+          </label>
+          <div className="button-group full">
+            <AppButton busy={form.formState.isSubmitting}>
+              Change password
+            </AppButton>
+            <Link
+              className="app-button secondary"
+              to={user?.is_platform_admin ? "/platform/profile" : "/profile"}
+            >
+              Cancel
+            </Link>
+          </div>
+        </form>
+      </SectionCard>
+    </>
+  );
+}
