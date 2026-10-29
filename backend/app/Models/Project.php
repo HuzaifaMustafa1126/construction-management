@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToCompany;
 use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Project extends Model
 {
     /** @use HasFactory<ProjectFactory> */
-    use HasFactory, SoftDeletes;
+    use BelongsToCompany, HasFactory, SoftDeletes;
 
     public const STATUSES = ['planning', 'active', 'on_hold', 'completed', 'cancelled'];
 

@@ -242,7 +242,7 @@ class SitePhotoController extends Controller
             return $this->notFound();
         }
         $report = DailySiteReport::query()->forCompany($tenant->companyId())->where('project_id', $project->id)->find($reportId);
-        if (! $report || ! $request->user()->can('site_reports.view') || ! $request->user()->can('view', $report)) {
+        if (! $report || ! $request->user()->can('daily_reports.view') || ! $request->user()->can('view', $report)) {
             return response()->json(['message' => 'Daily site report not found.'], 404);
         }
         if (! $request->user()->can('photos.view')) {

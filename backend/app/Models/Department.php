@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToCompany;
 use Database\Factories\DepartmentFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Department extends Model
 {
     /** @use HasFactory<DepartmentFactory> */
-    use HasFactory, SoftDeletes;
+    use BelongsToCompany, HasFactory, SoftDeletes;
 
     public const STATUS_ACTIVE = 'Active';
 

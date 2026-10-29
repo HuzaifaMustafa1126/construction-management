@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InventoryTransaction extends Model
 {
+    use BelongsToCompany;
+
     public const TYPES = ['opening_stock', 'material_received', 'material_consumed', 'adjustment_in', 'adjustment_out', 'material_wastage', 'inventory_correction_in', 'inventory_correction_out', 'material_issued', 'material_returned', 'transfer_out', 'transfer_in'];
 
     public const DIRECTIONS = ['in', 'out'];

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToCompany;
 use Database\Factories\DailySiteReportFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class DailySiteReport extends Model
 {
     /** @use HasFactory<DailySiteReportFactory> */
-    use HasFactory, SoftDeletes;
+    use BelongsToCompany, HasFactory, SoftDeletes;
 
     public const STATUSES = ['draft', 'submitted', 'approved', 'changes_required'];
 

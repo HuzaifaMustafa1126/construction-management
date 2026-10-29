@@ -31,7 +31,7 @@ const schema = z.object({
   permissions: z.array(z.string()),
 });
 export default function RolesPage() {
-  const { can } = useAuth();
+  const { can, refreshUser } = useAuth();
   const { company } = useCompany();
   const qc = useQueryClient();
   const [modal, setModal] = useState(null),
@@ -87,6 +87,7 @@ export default function RolesPage() {
       modal.id
         ? await rolesApi.update(modal.id, values)
         : await rolesApi.create(values);
+      await refreshUser();
       setModal(null);
       await invalidate();
       toast.success("Role saved.");
@@ -152,6 +153,12 @@ export default function RolesPage() {
               form.setValue("permissions", value, { shouldValidate: true })
             }
           />
+          {!!modal?.preserved_permissions?.length && (
+            <AppAlert>
+              Reserved or unrecognized grants are preserved by the server and
+              are not selectable here: {modal.preserved_permissions.join(", ")}
+            </AppAlert>
+          )}
           {form.formState.errors.permissions && (
             <small role="alert">
               {form.formState.errors.permissions.message}

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Authorization\PermissionCatalog;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,11 +13,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Exceptions\PermissionDoesNotExist;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmailContract
 {
-    use HasApiTokens, HasFactory, HasRoles, MustVerifyEmailTrait, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, HasRoles, MustVerifyEmailTrait, Notifiable, SoftDeletes {
+        HasRoles::hasPermissionTo as private hasPermissionToWithoutCompatibility;
+    }
 
     protected string $guard_name = 'web';
 
@@ -85,5 +89,24 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function isActive(): bool
     {
         return $this->status === self::STATUS_ACTIVE;
+    }
+
+    public function hasPermissionTo($permission, $guardName = null): bool
+    {
+        if (! is_string($permission)) {
+            return $this->hasPermissionToWithoutCompatibility($permission, $guardName);
+        }
+
+        foreach (PermissionCatalog::equivalents($permission) as $equivalent) {
+            try {
+                if ($this->hasPermissionToWithoutCompatibility($equivalent, $guardName)) {
+                    return true;
+                }
+            } catch (PermissionDoesNotExist) {
+                // Compatibility must tolerate one side of an alias not being defined yet.
+            }
+        }
+
+        return false;
     }
 }

@@ -26,6 +26,10 @@ trait BelongsToCompany
                 $model->company_id = $companyId;
             }
 
+            if ($model->exists && $model->isDirty('company_id')) {
+                throw new LogicException('Company ownership cannot be changed.');
+            }
+
             if ((int) $model->company_id !== $companyId) {
                 throw new LogicException('Cross-company writes are not allowed.');
             }

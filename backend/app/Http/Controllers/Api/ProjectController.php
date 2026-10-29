@@ -87,7 +87,7 @@ class ProjectController extends Controller
         if (! $project) {
             return $this->notFound();
         }
-        if (! $request->user()->can('projects.update') || ! $request->user()->can('update', $project)) {
+        if (! $request->user()->can('projects.edit') || ! $request->user()->can('update', $project)) {
             return $this->forbidden();
         }
         $validated = $request->validated();
@@ -121,7 +121,7 @@ class ProjectController extends Controller
         if (! $project) {
             return $this->notFound();
         }
-        if (! $request->user()->can('projects.update') || ! $request->user()->can('update', $project)) {
+        if (! $request->user()->can('projects.edit') || ! $request->user()->can('update', $project)) {
             return $this->forbidden();
         }
         $status = $request->validated('status');
@@ -145,7 +145,7 @@ class ProjectController extends Controller
         if (! $project) {
             return $this->notFound();
         }
-        if (! $request->user()->can('projects.update') || ! $request->user()->can('update', $project)) {
+        if (! $request->user()->can('projects.edit') || ! $request->user()->can('update', $project)) {
             return $this->forbidden();
         }
         $before = $project->progress_percentage;

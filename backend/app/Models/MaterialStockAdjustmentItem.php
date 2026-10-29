@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MaterialStockAdjustmentItem extends Model
 {
+    use BelongsToCompany;
+
     public const TYPES = ['adjustment_in', 'adjustment_out', 'material_wastage', 'inventory_correction_in', 'inventory_correction_out'];
 
     public const REASON_CODES = ['physical_count_difference', 'damage', 'breakage', 'theft', 'expiry', 'site_loss', 'recording_error', 'other'];

@@ -66,7 +66,7 @@ class MaterialRequestController extends Controller
         $m = $this->find($r, $t, $requestId);
         if (! $m) {
             return $this->missing();
-        }if (! $r->user()->can('material_requests.update') || $m->status !== 'draft' || (! $r->user()->hasRole('company_admin') && $m->requested_by !== $r->user()->id)) {
+        }if (! $r->user()->can('material_requests.update') || $m->status !== 'draft' || ! $this->ownsRequestOrIsCompanyAdmin($r, $m)) {
             return $this->deny();
         }$v = $this->validateContent($r, $t, $m->project_id, false);
         if ($v instanceof JsonResponse) {
@@ -84,7 +84,7 @@ class MaterialRequestController extends Controller
         $m = $this->find($r, $t, $requestId);
         if (! $m) {
             return $this->missing();
-        }if (! $r->user()->can('material_requests.submit') || $m->status !== 'draft' || (! $r->user()->hasRole('company_admin') && $m->requested_by !== $r->user()->id)) {
+        }if (! $r->user()->can('material_requests.submit') || $m->status !== 'draft' || ! $this->ownsRequestOrIsCompanyAdmin($r, $m)) {
             return $this->deny();
         }$m->forceFill(['status' => 'submitted', 'submitted_at' => now()])->save();
 
@@ -130,11 +130,30 @@ class MaterialRequestController extends Controller
         $m = $this->find($r, $t, $requestId);
         if (! $m) {
             return $this->missing();
-        }if (! $r->user()->can('material_requests.update') || ! in_array($m->status, ['draft', 'submitted'], true)) {
+        }if (! $r->user()->can('material_requests.update') || ! $this->ownsRequestOrIsCompanyAdmin($r, $m)) {
             return $this->deny();
-        }$m->forceFill(['status' => 'cancelled'])->save();
+        }
 
-        return response()->json(['data' => $this->data($m)]);
+        $cancelled = DB::transaction(function () use ($requestId, $t): ?MaterialRequest {
+            $locked = MaterialRequest::forCompany($t->companyId())
+                ->whereKey($requestId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $locked || ! in_array($locked->status, ['draft', 'submitted'], true)) {
+                return null;
+            }
+
+            $locked->forceFill(['status' => 'cancelled'])->save();
+
+            return $locked;
+        });
+
+        if (! $cancelled) {
+            return $this->deny();
+        }
+
+        return response()->json(['data' => $this->data($cancelled)]);
     }
 
     public function issue(Request $r, TenantContext $t, int $requestId): JsonResponse
@@ -237,6 +256,13 @@ class MaterialRequestController extends Controller
         }$m = MaterialRequest::forCompany($t->companyId())->find($id);
 
         return $m && $this->project($r, $t, $m->project_id) ? $m : null;
+    }
+
+    private function ownsRequestOrIsCompanyAdmin(Request $request, MaterialRequest $materialRequest): bool
+    {
+        return $request->user()->hasRole('company_admin')
+            || ($materialRequest->requested_by !== null
+                && (int) $materialRequest->requested_by === (int) $request->user()->id);
     }
 
     private function data(MaterialRequest $m): MaterialRequest

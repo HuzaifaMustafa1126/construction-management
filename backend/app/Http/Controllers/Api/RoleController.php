@@ -93,8 +93,13 @@ class RoleController extends Controller
 
         DB::transaction(function () use ($request, $tenant, $role, $validated): void {
             $before = ['name' => $role->name, 'permissions' => $role->permissions()->pluck('name')->all()];
+            $preserved = $role->permissions()
+                ->pluck('name')
+                ->filter(fn (string $permission) => ! PermissionCatalog::isSelectable(PermissionCatalog::canonical($permission))
+                    && ! array_key_exists($permission, PermissionCatalog::LEGACY_TO_CANONICAL))
+                ->all();
             $role->update(['name' => $validated['name']]);
-            $role->syncPermissions($validated['permissions']);
+            $role->syncPermissions(array_values(array_unique([...$validated['permissions'], ...$preserved])));
             $this->log($request, $tenant, $role, 'role.updated', [
                 'before' => $before,
                 'after' => $validated,
@@ -134,14 +139,20 @@ class RoleController extends Controller
 
     private function validateRole(Request $request, int $companyId, ?int $ignore = null): array
     {
-        return $request->validate([
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:125', 'regex:/^[a-z][a-z0-9_]*$/', Rule::notIn(['platform_super_admin']), Rule::unique('roles')->where(
                 fn ($query) => $query->where('company_id', $companyId)->where('guard_name', 'web'),
             )->ignore($ignore)],
             'permissions' => ['required', 'array'],
-            'permissions.*' => ['string', Rule::in(PermissionCatalog::all())],
+            'permissions.*' => ['string', Rule::in([
+                ...PermissionCatalog::all(),
+                ...array_keys(PermissionCatalog::LEGACY_TO_CANONICAL),
+            ])],
             'company_id' => ['prohibited'],
         ]);
+        $validated['permissions'] = PermissionCatalog::normalize($validated['permissions']);
+
+        return $validated;
     }
 
     private function mayGrant(Request $request, array $permissions): bool
@@ -156,10 +167,23 @@ class RoleController extends Controller
 
     private function serialize(Role $role): array
     {
+        $stored = $role->permissions->pluck('name');
+        $selectable = collect(PermissionCatalog::normalize($stored))
+            ->filter(fn (string $permission) => PermissionCatalog::isSelectable($permission))
+            ->values()
+            ->all();
+        $preserved = $stored
+            ->filter(fn (string $permission) => ! PermissionCatalog::isSelectable(PermissionCatalog::canonical($permission))
+                && ! array_key_exists($permission, PermissionCatalog::LEGACY_TO_CANONICAL))
+            ->sort()
+            ->values()
+            ->all();
+
         return [
             'id' => $role->id,
             'name' => $role->name,
-            'permissions' => $role->permissions->pluck('name')->sort()->values()->all(),
+            'permissions' => $selectable,
+            'preserved_permissions' => $preserved,
         ];
     }
 

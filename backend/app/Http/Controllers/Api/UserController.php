@@ -9,12 +9,14 @@ use App\Http\Requests\Api\V1\UpdateUserRequest;
 use App\Http\Requests\Api\V1\UpdateUserStatusRequest;
 use App\Http\Resources\Api\V1\UserResource;
 use App\Models\User;
+use App\Services\UserAccountService;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class UserController extends Controller
 {
@@ -134,7 +136,7 @@ class UserController extends Controller
             'user' => new UserResource($user->load(['company:id,name,slug', 'roles:id,name', 'department:id,name,code,status,deleted_at']))]);
     }
 
-    public function status(UpdateUserStatusRequest $request, TenantContext $tenant, int $id): JsonResponse
+    public function status(UpdateUserStatusRequest $request, TenantContext $tenant, UserAccountService $accounts, int $id): JsonResponse
     {
         if (! $request->user()->hasRole('company_admin') || ! $request->user()->can('users.update')) {
             return $this->forbidden();
@@ -149,14 +151,19 @@ class UserController extends Controller
             return response()->json(['message' => 'The last active Company Admin cannot be suspended.'], 422);
         }
         $before = $user->status;
-        $user->update(['status' => $status]);
-        $this->log($request, $tenant, $user, 'user.status_changed', ['before' => $before, 'after' => $status]);
+        DB::transaction(function () use ($accounts, $before, $request, $status, $tenant, $user): void {
+            $user->update(['status' => $status]);
+            if ($status !== User::STATUS_ACTIVE) {
+                $accounts->revokeAccess($user);
+            }
+            $this->log($request, $tenant, $user, 'user.status_changed', ['before' => $before, 'after' => $status]);
+        });
 
         return response()->json(['message' => 'User status updated successfully.',
             'user' => new UserResource($user->load(['company:id,name,slug', 'roles:id,name', 'department:id,name,code,status,deleted_at']))]);
     }
 
-    public function destroy(Request $request, TenantContext $tenant, int $id): JsonResponse
+    public function destroy(Request $request, TenantContext $tenant, UserAccountService $accounts, int $id): JsonResponse
     {
         if (! $request->user()->can('users.delete')) {
             return $this->forbidden();
@@ -168,14 +175,26 @@ class UserController extends Controller
         if ($request->user()->is($user)) {
             return response()->json(['message' => 'You cannot delete your own account.'], 403);
         }
+        if ($user->isPlatformAdmin()) {
+            return response()->json(['message' => 'Platform administrators cannot be deleted from company user management.'], 403);
+        }
         if ($user->status === User::STATUS_ACTIVE && $user->hasRole('company_admin')
             && $this->activeAdminCount($tenant->companyId()) <= 1) {
             return response()->json(['message' => 'The last active Company Admin cannot be deleted.'], 422);
         }
-        $this->log($request, $tenant, $user, 'user.deleted', ['deleted_at' => now()->toIso8601String()]);
-        $user->delete();
+        try {
+            DB::transaction(function () use ($accounts, $request, $tenant, $user): void {
+                $this->log($request, $tenant, $user, 'user.permanently_deleted', [
+                    'email' => $user->email,
+                    'deleted_at' => now()->toIso8601String(),
+                ]);
+                $accounts->permanentlyDelete($user);
+            });
+        } catch (ConflictHttpException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 409);
+        }
 
-        return response()->json(['message' => 'User deleted successfully.']);
+        return response()->json(['message' => 'User permanently deleted successfully.']);
     }
 
     private function assignableRole(Request $request, TenantContext $tenant, string $name): ?Role

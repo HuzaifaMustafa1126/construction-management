@@ -8,6 +8,10 @@ import {
   useState,
 } from "react";
 import { authApi, companyApi } from "../../../api/endpoints";
+import {
+  canonicalPermission,
+  normalizePermissions,
+} from "../permissions";
 
 const AuthContext = createContext(null);
 const CompanyContext = createContext(null);
@@ -15,7 +19,7 @@ const tokenKey = "auth_token";
 function permissionsOf(user) {
   const direct = user?.permissions || user?.effective_permissions || [];
   const viaRoles = (user?.roles || []).flatMap((r) => r.permissions || []);
-  return new Set(
+  return normalizePermissions(
     [...direct, ...viaRoles]
       .map((x) => (typeof x === "string" ? x : x?.name))
       .filter(Boolean),
@@ -108,7 +112,8 @@ export function AuthProvider({ children }) {
   };
   const permissions = useMemo(() => permissionsOf(user), [user]);
   const can = useCallback(
-    (p) => !p || permissions.has("*") || permissions.has(p),
+    (p) =>
+      !p || permissions.has("*") || permissions.has(canonicalPermission(p)),
     [permissions],
   );
   return (

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\User;
+use App\Support\Authorization\PermissionCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\PermissionRegistrar;
@@ -88,9 +89,16 @@ class AuthController extends Controller
                 $user->unsetRelation('roles')->unsetRelation('permissions');
                 $identity = array_merge($user->toArray(), [
                     'roles' => $user->getRoleNames()->sort()->values()->all(),
-                    'effective_permissions' => $user->getAllPermissions()->pluck('name')->sort()->values()->all(),
+                    'effective_permissions' => PermissionCatalog::normalize($user->getAllPermissions()),
                     'company' => ['id' => $company->id, 'name' => $company->name, 'status' => $company->status],
                 ]);
+                $companyIdentity = [
+                    'id' => $company->id,
+                    'name' => $company->name,
+                    'currency' => $company->currency,
+                    'status' => $company->status,
+                ];
+                $effectivePermissions = $identity['effective_permissions'];
             } finally {
                 setPermissionsTeamId($previousTeamId);
                 $user->unsetRelation('roles')->unsetRelation('permissions');
@@ -98,9 +106,14 @@ class AuthController extends Controller
             }
         } else {
             $identity = $user->toArray();
+            $companyIdentity = null;
+            $effectivePermissions = [];
         }
+
         return response()->json([
             'user' => $identity,
+            'company' => $companyIdentity,
+            'permissions' => $effectivePermissions,
         ]);
     }
 

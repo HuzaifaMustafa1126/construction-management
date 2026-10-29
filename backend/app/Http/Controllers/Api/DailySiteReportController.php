@@ -26,7 +26,7 @@ class DailySiteReportController extends Controller
         if (! $project) {
             return $this->notFound();
         }
-        if (! $request->user()->can('site_reports.view')) {
+        if (! $request->user()->can('daily_reports.view')) {
             return $this->forbidden();
         }
         $validated = $request->validated();
@@ -65,7 +65,7 @@ class DailySiteReportController extends Controller
         if (! $project) {
             return $this->notFound();
         }
-        if (! $request->user()->can('site_reports.create')
+        if (! $request->user()->can('daily_reports.create')
             || ! $request->user()->can('create', [DailySiteReport::class, $project])) {
             return $this->forbidden();
         }
@@ -92,7 +92,7 @@ class DailySiteReportController extends Controller
 
     public function show(Request $request, TenantContext $tenant, int $id, int $reportId): JsonResponse
     {
-        if (! $request->user()->can('site_reports.view')) {
+        if (! $request->user()->can('daily_reports.view')) {
             return $this->forbidden();
         }
         $report = $this->report($request, $tenant, $id, $reportId);
@@ -169,7 +169,7 @@ class DailySiteReportController extends Controller
         if (! $report) {
             return $this->notFound();
         }
-        if (! $request->user()->can('site_reports.approve') || ! $request->user()->can('review', $report)) {
+        if (! $request->user()->can('daily_reports.approve') || ! $request->user()->can('review', $report)) {
             return $this->forbidden();
         }
         if ($report->status !== 'submitted') {
@@ -181,10 +181,14 @@ class DailySiteReportController extends Controller
         $report->reviewed_by = $request->user()->id;
         $report->reviewed_at = now();
         $report->review_notes = $validated['review_notes'] ?? null;
-        $report->is_client_visible = false;
+        $report->is_client_visible = $approved && ($validated['publish_to_clients'] ?? false);
         $report->save();
         $event = $approved ? 'site_report.approved' : 'site_report.changes_requested';
-        $this->log($request, $report, $event, ['action' => $validated['action'], 'review_notes' => $report->review_notes]);
+        $this->log($request, $report, $event, [
+            'action' => $validated['action'],
+            'review_notes' => $report->review_notes,
+            'is_client_visible' => $report->is_client_visible,
+        ]);
 
         return response()->json(['data' => new DailySiteReportResource($this->load($report)), 'message' => 'Daily site report reviewed successfully.']);
     }
@@ -195,7 +199,7 @@ class DailySiteReportController extends Controller
         if (! $report) {
             return $this->notFound();
         }
-        if (! $request->user()->can('site_reports.approve') || ! $request->user()->can('visibility', $report)) {
+        if (! $request->user()->can('daily_reports.approve') || ! $request->user()->can('visibility', $report)) {
             return $this->forbidden();
         }
         $visible = $request->validated('is_client_visible');

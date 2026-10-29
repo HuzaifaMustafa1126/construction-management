@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToCompany;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MaterialRequest extends Model
 {
-    use SoftDeletes;
+    use BelongsToCompany, SoftDeletes;
 
     public const STATUSES = ['draft', 'submitted', 'approved', 'rejected', 'partially_issued', 'issued', 'cancelled'];
 

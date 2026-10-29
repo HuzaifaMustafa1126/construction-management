@@ -12,7 +12,7 @@ export const companyNavigation = [
         icon: "projects",
         permission: "projects.view",
       },
-      { label: "Daily Site Reports", route: "/daily-reports", icon: "reports", permission: "site_reports.view" },
+      { label: "Daily Site Reports", route: "/daily-reports", icon: "reports", permission: "daily_reports.view" },
       { label: "Site Photos", route: "/site-photos", icon: "photos", permission: "photos.view" },
       { label: "Materials", route: "/materials", icon: "materials", permission: "materials.view" },
       { label: "Material Requests", route: "/material-requests", icon: "reports", permission: "material_requests.view" },

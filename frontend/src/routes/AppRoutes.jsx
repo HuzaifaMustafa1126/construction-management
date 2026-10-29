@@ -167,18 +167,18 @@ export default function AppRoutes() {
             <Route path="/projects/new" element={<CreateProjectPage />} />
           </Route>
         </Route>
-        <Route element={<ProtectedRoute permission="projects.update" />}>
+        <Route element={<ProtectedRoute permission="projects.edit" />}>
           <Route element={<WorkspaceLayout />}>
             <Route path="/projects/:id/edit" element={<EditProjectPage />} />
           </Route>
         </Route>
-        <Route element={<ProtectedRoute permission="site_reports.view" />}>
+        <Route element={<ProtectedRoute permission="daily_reports.view" />}>
           <Route element={<WorkspaceLayout />}>
             <Route path="/daily-reports" element={<DailyReportsPage />} />
             <Route path="/daily-reports/:id" element={<DailyReportDetailsPage />} />
           </Route>
         </Route>
-        <Route element={<ProtectedRoute permission="site_reports.create" />}>
+        <Route element={<ProtectedRoute permission="daily_reports.create" />}>
           <Route element={<WorkspaceLayout />}><Route path="/daily-reports/new" element={<CreateDailyReportPage />} /></Route>
         </Route>
         <Route element={<ProtectedRoute permission="site_reports.update" />}>

@@ -136,6 +136,7 @@ export function ConfirmDialog({
   title,
   message,
   busy,
+  confirmLabel = "Confirm",
   onConfirm,
   onClose,
 }) {
@@ -147,7 +148,7 @@ export function ConfirmDialog({
           Cancel
         </AppButton>
         <AppButton variant="danger" busy={busy} onClick={onConfirm}>
-          Confirm
+          {confirmLabel}
         </AppButton>
       </div>
     </AppModal>
