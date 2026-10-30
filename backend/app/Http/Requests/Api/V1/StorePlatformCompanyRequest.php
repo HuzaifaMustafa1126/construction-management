@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 class StorePlatformCompanyRequest extends FormRequest
 {
@@ -26,11 +27,12 @@ class StorePlatformCompanyRequest extends FormRequest
             'company.email' => ['required', 'email', 'max:255', 'unique:companies,email'],
             'company.phone' => ['required', 'string', 'max:30', 'regex:/^\+?[0-9][0-9\- ]{6,28}$/'],
             'company.address' => ['nullable', 'string', 'max:2000'],
-            'admin' => ['required', 'array:first_name,last_name,email,phone'],
+            'admin' => ['required', 'array:first_name,last_name,email,phone,password'],
             'admin.first_name' => ['required', 'string', 'max:100'],
             'admin.last_name' => ['required', 'string', 'max:100'],
             'admin.email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'admin.phone' => ['nullable', 'string', 'max:30', 'regex:/^\+?[0-9][0-9\- ]{6,28}$/'],
+            'admin.password' => ['required', 'string', Password::min(12)->mixedCase()->numbers()->symbols()],
         ];
     }
 }

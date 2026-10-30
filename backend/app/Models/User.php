@@ -86,6 +86,16 @@ class User extends Authenticatable implements MustVerifyEmailContract
         return $this->hasMany(SitePhoto::class, 'uploaded_by');
     }
 
+    public function sentStaffInvitations(): HasMany
+    {
+        return $this->hasMany(StaffInvitation::class, 'invited_by');
+    }
+
+    public function acceptedStaffInvitations(): HasMany
+    {
+        return $this->hasMany(StaffInvitation::class, 'accepted_user_id');
+    }
+
     public function isActive(): bool
     {
         return $this->status === self::STATUS_ACTIVE;

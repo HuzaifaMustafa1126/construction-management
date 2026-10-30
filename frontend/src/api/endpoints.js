@@ -83,6 +83,19 @@ export const usersApi = {
       .put(`/v1/users/${id}/department`, { department_id })
       .then((r) => unwrap(r)),
 };
+export const staffInvitationsApi = {
+  list: () => api.get("/v1/staff-invitations").then((r) => unwrap(r)),
+  create: (payload) =>
+    api.post("/v1/staff-invitations", payload).then((r) => unwrap(r)),
+  resend: (id) =>
+    api.post(`/v1/staff-invitations/${id}/resend`).then((r) => unwrap(r)),
+  cancel: (id) =>
+    api.post(`/v1/staff-invitations/${id}/cancel`).then((r) => unwrap(r)),
+  inspect: (token) =>
+    api.post("/v1/staff-invitations/inspect", { token }).then((r) => unwrap(r)),
+  accept: (payload) =>
+    api.post("/v1/staff-invitations/accept", payload).then((r) => unwrap(r)),
+};
 export const rolesApi = crud("/v1/roles", "roles");
 export const permissionsApi = {
   list: () => api.get("/v1/permissions").then((r) => unwrap(r, "permissions")),

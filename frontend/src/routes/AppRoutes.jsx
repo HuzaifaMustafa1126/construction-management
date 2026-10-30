@@ -43,7 +43,10 @@ const CompanyDashboard = lazy(
 const CompanyProfilePage = lazy(
   () => import("../features/company/pages/CompanyProfilePage"),
 );
-const UsersPage = lazy(() => import("../features/users/pages/UsersPage"));
+const UsersPage = lazy(() => import("../features/users/pages/UserManagementPage"));
+const AcceptInvitationPage = lazy(
+  () => import("../features/auth/pages/AcceptInvitationPage"),
+);
 const RolesPage = lazy(() => import("../features/roles/pages/RolesPage"));
 const DepartmentsPage = lazy(
   () => import("../features/departments/pages/DepartmentsPage"),
@@ -124,6 +127,7 @@ export default function AppRoutes() {
           path="/administrator/password/setup"
           element={<AdministratorPasswordSetupPage />}
         />
+        <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
         <Route
           path="/verify-email/:id/:hash"
           element={<VerifyEmailResultPage />}

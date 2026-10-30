@@ -140,21 +140,36 @@ const createSchema = z.object({
     last_name: z.string().min(1),
     email: z.string().email(),
     phone: z.string().optional(),
+    password: z
+      .string()
+      .min(12, "Use at least 12 characters")
+      .regex(/[a-z]/, "Include a lowercase letter")
+      .regex(/[A-Z]/, "Include an uppercase letter")
+      .regex(/[0-9]/, "Include a number")
+      .regex(/[^A-Za-z0-9]/, "Include a symbol"),
   }),
 });
 export function PlatformCompanyCreate() {
   const nav = useNavigate();
   const [problem, setProblem] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const {
     register,
     handleSubmit,
+    resetField,
     setError,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(createSchema),
     defaultValues: {
       company: { name: "", email: "", phone: "", address: "" },
-      admin: { first_name: "", last_name: "", email: "", phone: "" },
+      admin: {
+        first_name: "",
+        last_name: "",
+        email: "",
+        phone: "",
+        password: "",
+      },
     },
   });
   const field = (name, label, type = "text") => (
@@ -177,6 +192,7 @@ export function PlatformCompanyCreate() {
           onSubmit={handleSubmit(async (data) => {
             try {
               const c = await platformApi.createCompany(data);
+              resetField("admin.password");
               nav(`/platform/companies/${c.id}`);
             } catch (error) {
               applyServerErrors(error, setError);
@@ -192,6 +208,22 @@ export function PlatformCompanyCreate() {
           {field("admin.last_name", "Administrator last name")}
           {field("admin.email", "Administrator email", "email")}
           {field("admin.phone", "Administrator phone")}
+          <AppInput
+            label="Administrator password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            required
+            error={errors.admin?.password?.message}
+            {...register("admin.password")}
+          />
+          <label className="permission-check">
+            <input
+              type="checkbox"
+              checked={showPassword}
+              onChange={(event) => setShowPassword(event.target.checked)}
+            />
+            Show password
+          </label>
           {problem && <div className="error-banner full">{problem}</div>}
           <AppButton busy={isSubmitting}>Create and invite</AppButton>
         </form>

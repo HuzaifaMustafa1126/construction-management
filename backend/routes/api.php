@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AdministratorPasswordController;
+use App\Http\Controllers\Api\AcceptStaffInvitationController;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\CompanyRegistrationController;
 use App\Http\Controllers\Api\DailySiteReportController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\Api\ProjectInventoryController;
 use App\Http\Controllers\Api\ProjectTeamController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SitePhotoController;
+use App\Http\Controllers\Api\StaffInvitationController;
 use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserDepartmentController;
@@ -47,6 +49,10 @@ Route::prefix('v1')->group(function () {
         ->middleware('throttle:5,1');
     Route::post('/administrator/password/setup', [AdministratorPasswordController::class, 'store'])
         ->middleware('throttle:5,1');
+    Route::post('/staff-invitations/inspect', [AcceptStaffInvitationController::class, 'inspect'])
+        ->middleware('throttle:staff-invitations-inspect');
+    Route::post('/staff-invitations/accept', [AcceptStaffInvitationController::class, 'accept'])
+        ->middleware('throttle:staff-invitations-accept');
     Route::get('/verify-email/{id}/{hash}', [CompanyRegistrationController::class, 'verify'])->middleware('throttle:company-verification')->name('verification.verify');
     Route::post('/resend-verification', [CompanyRegistrationController::class, 'resend'])->middleware('throttle:company-verification-resend');
 
@@ -78,6 +84,13 @@ Route::prefix('v1')->group(function () {
                 Route::delete('/users/{id}', [UserController::class, 'destroy']);
                 Route::put('/users/{id}/roles', [UserRoleController::class, 'update']);
                 Route::put('/users/{id}/department', [UserDepartmentController::class, 'update']);
+                Route::get('/staff-invitations', [StaffInvitationController::class, 'index']);
+                Route::post('/staff-invitations', [StaffInvitationController::class, 'store'])
+                    ->middleware('throttle:staff-invitations-manage');
+                Route::post('/staff-invitations/{id}/resend', [StaffInvitationController::class, 'resend'])
+                    ->middleware('throttle:staff-invitations-manage');
+                Route::post('/staff-invitations/{id}/cancel', [StaffInvitationController::class, 'cancel'])
+                    ->middleware('throttle:staff-invitations-manage');
                 Route::get('/departments', [DepartmentController::class, 'index']);
                 Route::post('/departments', [DepartmentController::class, 'store']);
                 Route::get('/departments/{id}', [DepartmentController::class, 'show']);

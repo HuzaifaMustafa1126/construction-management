@@ -48,7 +48,7 @@ class PlatformCompanyController extends Controller
         [$company, $admin] = DB::transaction(function () use ($request) {
             $c = $request->validated('company'); $a = $request->validated('admin');
             $company = Company::create(array_merge($c, ['slug'=>Str::slug($c['name']).'-'.Str::lower((string) Str::ulid()),'currency'=>'PKR','timezone'=>'Asia/Karachi','subscription_status'=>Company::SUBSCRIPTION_STATUS_TRIAL,'status'=>Company::STATUS_ACTIVE,'onboarding_status'=>Company::ONBOARDING_COMPLETE,'email_verification_required'=>false]));
-            $admin = new User(array_merge($a, ['name'=>trim($a['first_name'].' '.$a['last_name']),'password'=>Str::password(48),'status'=>'Inactive']));
+            $admin = new User(array_merge($a, ['name'=>trim($a['first_name'].' '.$a['last_name']),'status'=>User::STATUS_ACTIVE]));
             $admin->company_id = $company->id; $admin->save(); $this->roles->initialize($company, $admin);
             activity('platform')->causedBy($request->user())->performedOn($company)->event('platform.company_created')->withProperties(['company_id'=>$company->id,'administrator_id'=>$admin->id])->log('platform.company_created');
             return [$company, $admin];

@@ -47,6 +47,12 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('company-registration', fn ($request) => Limit::perHour(5)->by('company-registration:'.$request->ip()));
         RateLimiter::for('company-verification', fn ($request) => Limit::perMinute(10)->by('company-verification:'.$request->ip()));
         RateLimiter::for('company-verification-resend', fn ($request) => Limit::perMinute(3)->by('company-verification-resend:'.$request->ip()));
+        RateLimiter::for('staff-invitations-manage', fn ($request) => Limit::perMinute(10)
+            ->by('staff-invitations-manage:'.($request->user()?->id ?? $request->ip())));
+        RateLimiter::for('staff-invitations-inspect', fn ($request) => Limit::perMinute(20)
+            ->by('staff-invitations-inspect:'.$request->ip()));
+        RateLimiter::for('staff-invitations-accept', fn ($request) => Limit::perMinute(5)
+            ->by('staff-invitations-accept:'.$request->ip()));
 
         Gate::policy(Project::class, ProjectPolicy::class);
         Gate::policy(ProjectInventory::class, ProjectInventoryPolicy::class);
