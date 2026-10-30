@@ -5,6 +5,8 @@ import WorkspaceLayout from "../layouts/WorkspaceLayout";
 import PlatformLayout from "../layouts/PlatformLayout";
 import {
   LoginPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
   VerifyEmailPage,
   VerifyEmailResultPage,
 } from "../features/auth/pages/AuthPhase2";
@@ -89,6 +91,8 @@ export default function AppRoutes() {
       <Routes>
         <Route element={<GuestRoute />}>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/sign-in" element={<Navigate to="/login" replace />} />
         </Route>
         <Route element={<PlatformRoute />}>

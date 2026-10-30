@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { authApi, companyApi } from "../../../api/endpoints";
+import { isAccountRestriction } from "../../../api/axiosClient";
 import {
   canonicalPermission,
   normalizePermissions,
@@ -29,12 +30,14 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [company, setCompany] = useState(null);
   const [companyError, setCompanyError] = useState(null);
+  const [restrictionMessage, setRestrictionMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const clearSession = useCallback(() => {
     sessionStorage.removeItem(tokenKey);
     setUser(null);
     setCompany(null);
     setCompanyError(null);
+    setRestrictionMessage("");
     window.dispatchEvent(new Event("tenant-cache-clear"));
   }, []);
   const refreshUser = useCallback(async () => {
@@ -76,16 +79,32 @@ export function AuthProvider({ children }) {
       try {
         const identity = await refreshUser();
         if (!identity?.is_platform_admin) await establishCompany(identity);
-      } catch {
+      } catch (error) {
         clearSession();
+        if (isAccountRestriction(error)) {
+          setRestrictionMessage(
+            "Company or account access is currently unavailable.",
+          );
+        }
       } finally {
         setLoading(false);
       }
     };
     const expired = () => clearSession();
+    const restricted = (event) => {
+      clearSession();
+      setRestrictionMessage(
+        event.detail?.message ||
+          "Company or account access is currently unavailable.",
+      );
+    };
     window.addEventListener("auth-expired", expired);
+    window.addEventListener("account-restricted", restricted);
     init();
-    return () => window.removeEventListener("auth-expired", expired);
+    return () => {
+      window.removeEventListener("auth-expired", expired);
+      window.removeEventListener("account-restricted", restricted);
+    };
   }, [clearSession, establishCompany, refreshUser]);
   const login = async (email, password) => {
     clearSession();
@@ -127,6 +146,7 @@ export function AuthProvider({ children }) {
         isAuthenticated: !!user,
         permissions,
         can,
+        restrictionMessage,
       }}
     >
       <CompanyContext.Provider

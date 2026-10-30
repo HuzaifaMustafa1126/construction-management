@@ -181,7 +181,7 @@ export function RegisterCompanyPage() {
   );
 }
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login, restrictionMessage } = useAuth();
   const nav = useNavigate(),
     location = useLocation();
   const [problem, setProblem] = useState("");
@@ -220,6 +220,12 @@ export function LoginPage() {
   };
   return (
     <Shell title="Welcome back" subtitle="Sign in to your secure workspace.">
+      {restrictionMessage && (
+        <div className="error-banner" role="alert">
+          {restrictionMessage} Contact your administrator if you believe this
+          is an error.
+        </div>
+      )}
       <form className="form-grid" onSubmit={handleSubmit(submit)}>
         <div className="full">
           <AppInput
@@ -252,6 +258,122 @@ export function LoginPage() {
           <AppButton busy={isSubmitting}>Sign in</AppButton>
         </div>
       </form>
+      <div className="auth-links">
+        <Link to="/forgot-password">Forgot your password?</Link>
+      </div>
+    </Shell>
+  );
+}
+
+export function ForgotPasswordPage() {
+  const [confirmation, setConfirmation] = useState("");
+  const [problem, setProblem] = useState("");
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(
+      z.object({ email: z.string().trim().email("Enter a valid email").max(255) }),
+    ),
+  });
+  const submit = async (data) => {
+    setProblem("");
+    setConfirmation("");
+    try {
+      const response = await authApi.forgotPassword({ email: data.email.trim() });
+      setConfirmation(
+        response?.message ||
+          "If an eligible account matches that email, a password reset link has been sent.",
+      );
+    } catch (error) {
+      applyServerErrors(error, setError);
+      setProblem(apiMessage(error, "Unable to request a password reset."));
+    }
+  };
+  return (
+    <Shell title="Forgot password" subtitle="Request a secure link to choose a new password.">
+      {confirmation && <div className="success-banner" role="status">{confirmation}</div>}
+      {problem && <div className="error-banner" role="alert">{problem}</div>}
+      <form className="form-grid" onSubmit={handleSubmit(submit)} noValidate>
+        <div className="full">
+          <AppInput
+            label="Email"
+            type="email"
+            autoComplete="email"
+            required
+            error={errors.email?.message}
+            {...register("email")}
+          />
+        </div>
+        <div className="full">
+          <AppButton type="submit" busy={isSubmitting}>Send reset link</AppButton>
+        </div>
+      </form>
+      <div className="auth-links"><Link to="/login">Back to login</Link></div>
+    </Shell>
+  );
+}
+
+const resetPasswordSchema = z
+  .object({
+    email: z.string().trim().email("Enter a valid email").max(255),
+    token: z.string().min(1, "Reset token is required"),
+    password: z.string().min(8, "Use at least 8 characters").regex(/[A-Za-z]/, "Include a letter").regex(/[0-9]/, "Include a number"),
+    password_confirmation: z.string(),
+  })
+  .refine((value) => value.password === value.password_confirmation, {
+    path: ["password_confirmation"],
+    message: "Passwords do not match",
+  });
+
+export function ResetPasswordPage() {
+  const [params] = useSearchParams();
+  const [problem, setProblem] = useState("");
+  const [success, setSuccess] = useState("");
+  const [show, setShow] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      email: params.get("email") || "",
+      token: params.get("token") || "",
+      password: "",
+      password_confirmation: "",
+    },
+  });
+  const submit = async (data) => {
+    setProblem("");
+    setSuccess("");
+    try {
+      const response = await authApi.resetPassword({ ...data, email: data.email.trim() });
+      setSuccess(response?.message || "Password reset successfully. You can now sign in.");
+    } catch (error) {
+      applyServerErrors(error, setError);
+      setProblem(apiMessage(error, "Unable to reset the password."));
+    }
+  };
+  return (
+    <Shell title="Reset password" subtitle="Enter the reset details and choose a new password.">
+      {success && <div className="success-banner" role="status">{success}</div>}
+      {problem && <div className="error-banner" role="alert">{problem}</div>}
+      {!success && (
+        <form className="form-grid" onSubmit={handleSubmit(submit)} noValidate>
+          <div className="full"><AppInput label="Email" type="email" autoComplete="email" required error={errors.email?.message} {...register("email")} /></div>
+          <div className="full"><AppInput label="Reset token" autoComplete="off" required error={errors.token?.message} {...register("token")} /></div>
+          <div className="full"><AppInput label="New password" type={show ? "text" : "password"} autoComplete="new-password" required error={errors.password?.message} {...register("password")} /></div>
+          <div className="full"><AppInput label="Confirm password" type={show ? "text" : "password"} autoComplete="new-password" required error={errors.password_confirmation?.message} {...register("password_confirmation")} /></div>
+          <p className="full auth-help">Use 8 or more characters with at least one letter and one number.</p>
+          <label className="full permission-check"><input type="checkbox" checked={show} onChange={(event) => setShow(event.target.checked)} />Show passwords</label>
+          <div className="full"><AppButton type="submit" busy={isSubmitting}>Reset password</AppButton></div>
+        </form>
+      )}
+      <div className="auth-links"><Link to="/login">{success ? "Return to login" : "Back to login"}</Link></div>
     </Shell>
   );
 }

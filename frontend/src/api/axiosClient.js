@@ -1,4 +1,18 @@
 import axios from "axios";
+
+const accountRestrictionMessages = new Set([
+  "Account access is unavailable.",
+  "A company assignment is required.",
+  "A valid company assignment is required.",
+  "Company access is suspended.",
+]);
+
+export function isAccountRestriction(error) {
+  return (
+    error?.status === 403 && accountRestrictionMessages.has(error?.message)
+  );
+}
+
 const apiClient = axios.create({
   baseURL:
     import.meta.env.VITE_API_BASE_URL ||
@@ -21,6 +35,7 @@ apiClient.interceptors.response.use(
   (r) => r,
   (error) => {
     const e = error;
+    const normalized = normalizeApiError(e);
     if (
       e.response?.status === 401 &&
       !String(e.config?.url).endsWith("/login")
@@ -28,7 +43,15 @@ apiClient.interceptors.response.use(
       sessionStorage.removeItem("auth_token");
       window.dispatchEvent(new Event("auth-expired"));
     }
-    return Promise.reject(normalizeApiError(e));
+    if (isAccountRestriction(normalized)) {
+      sessionStorage.removeItem("auth_token");
+      window.dispatchEvent(
+        new CustomEvent("account-restricted", {
+          detail: { message: "Company or account access is currently unavailable." },
+        }),
+      );
+    }
+    return Promise.reject(normalized);
   },
 );
 export function normalizeApiError(error) {

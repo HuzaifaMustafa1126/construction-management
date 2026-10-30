@@ -63,6 +63,8 @@ Request `{ "email": "ayesha@example.com" }`; required email max 255, trimmed/low
 | Method/path | Request and response | Access |
 |---|---|---|
 | `POST /login` | Required email and string password; 200 `{ message,user,token }` | Public, 5/minute; active user, operational company, verified email. Invalid/unavailable: 401; unverified: 403. |
+| `POST /forgot-password` | Required email; always 200 with a generic `{ message }` after valid input | Public, 5/minute; sends only for active platform users or active users in operational companies. |
+| `POST /reset-password` | `email`, `token`, `password`, `password_confirmation`; password min 8 with letters/numbers; 200 `{ message }` | Public, 5/minute; eligible account and valid unexpired one-use broker token required. |
 | `POST /logout` | 200 `{ message }`; deletes current token | Sanctum |
 | `GET /me` | 200 `{ user }`; company users include backend-authoritative `roles`, `effective_permissions`, and a minimal `company` identity | Sanctum; active platform user or operational company user |
 | `PUT /me` | Profile subset; 200 `{ message,user: UserResource }` | Active company user or company-less Platform Super Admin |
@@ -71,6 +73,8 @@ Request `{ "email": "ayesha@example.com" }`; required email max 255, trimmed/low
 Profile fields: `first_name`/`last_name` required when present, string max 100; `name` required when present, max 255; `email` required when present, email max 255 and unique except self; `phone` and legacy `department` nullable strings max 30/100. Tenant, password, role(s), permissions, status, and remember token are prohibited.
 
 Login returns the authenticated user and token, while the frontend treats `/me` as the authoritative identity refresh. Company identities include company-scoped roles and effective permission names evaluated with the authenticated company team context. The company summary contains only `id`, `name`, and `status`.
+
+Protected 403 responses that specifically report unavailable account access, a missing/invalid company assignment, or suspended company access clear the stale browser session and show a generic restriction notice on Login. Ordinary authorization 403 responses do not clear authentication; backend permissions and policies remain authoritative.
 
 ## Company profile
 

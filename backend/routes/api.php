@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\MaterialStockAdjustmentController;
 use App\Http\Controllers\Api\MeasurementUnitController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\PlatformCompanyController;
+use App\Http\Controllers\Api\PasswordRecoveryController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\ProjectInventoryController;
@@ -39,6 +40,10 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::post('/login', [AuthController::class, 'login'])
+        ->middleware('throttle:5,1');
+    Route::post('/forgot-password', [PasswordRecoveryController::class, 'request'])
+        ->middleware('throttle:5,1');
+    Route::post('/reset-password', [PasswordRecoveryController::class, 'reset'])
         ->middleware('throttle:5,1');
     Route::post('/administrator/password/setup', [AdministratorPasswordController::class, 'store'])
         ->middleware('throttle:5,1');

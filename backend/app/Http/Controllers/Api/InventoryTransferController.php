@@ -40,7 +40,10 @@ class InventoryTransferController extends Controller
             $in = InventoryTransaction::forceCreate(['company_id' => $t->companyId(), 'project_id' => $destination->project_id, 'project_inventory_id' => $destination->id, 'material_id' => $destination->material_id, 'transaction_type' => 'transfer_in', 'quantity' => $v['quantity'], 'direction' => 'in', 'reference_type' => 'inventory_transfer', 'reference_id' => $transferId, 'related_transaction_id' => $out->id, 'idempotency_key' => $v['idempotency_key'].'-in', 'transaction_date' => $v['transfer_date'], 'notes' => $v['notes'] ?? null, 'created_by' => $r->user()->id]);
             $out->forceFill(['related_transaction_id' => $in->id])->save();
 
-            return DB::table('inventory_transfers')->find($transferId);
+            return DB::table('inventory_transfers')
+                ->where('company_id', $t->companyId())
+                ->where('id', $transferId)
+                ->first();
         });
 
         return response()->json(['data' => $transfer, 'message' => 'Inventory transferred successfully.'], 201);

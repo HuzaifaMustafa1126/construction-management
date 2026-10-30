@@ -14,6 +14,10 @@ export const authApi = {
   resendVerification: (payload) =>
     api.post("/v1/resend-verification", payload).then((r) => unwrap(r)),
   login: (payload) => api.post("/v1/login", payload).then((r) => unwrap(r)),
+  forgotPassword: (payload) =>
+    api.post("/v1/forgot-password", payload).then((r) => unwrap(r)),
+  resetPassword: (payload) =>
+    api.post("/v1/reset-password", payload).then((r) => unwrap(r)),
   setupAdministratorPassword: (payload) =>
     api
       .post("/v1/administrator/password/setup", payload)
