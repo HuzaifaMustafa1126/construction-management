@@ -24,7 +24,7 @@ class Project extends Model
     protected $fillable = [
         'name', 'code', 'description', 'location', 'address', 'city', 'state', 'country',
         'postal_code', 'start_date', 'expected_end_date', 'actual_end_date', 'budget',
-        'progress_percentage', 'status',
+        'progress_percentage', 'status', 'client_id',
     ];
 
     protected function casts(): array
@@ -41,6 +41,11 @@ class Project extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Client::class);
     }
 
     public function creator(): BelongsTo

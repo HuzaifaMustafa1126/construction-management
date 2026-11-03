@@ -1,8 +1,9 @@
 <?php
 
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\AdministratorPasswordController;
 use App\Http\Controllers\Api\AcceptStaffInvitationController;
+use App\Http\Controllers\Api\AdministratorPasswordController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\CompanyRegistrationController;
 use App\Http\Controllers\Api\DailySiteReportController;
@@ -12,13 +13,13 @@ use App\Http\Controllers\Api\InventoryTransferController;
 use App\Http\Controllers\Api\MaterialCategoryController;
 use App\Http\Controllers\Api\MaterialConsumptionController;
 use App\Http\Controllers\Api\MaterialController;
-use App\Http\Controllers\Api\MaterialRequestController;
 use App\Http\Controllers\Api\MaterialDeliveryController;
+use App\Http\Controllers\Api\MaterialRequestController;
 use App\Http\Controllers\Api\MaterialStockAdjustmentController;
 use App\Http\Controllers\Api\MeasurementUnitController;
+use App\Http\Controllers\Api\PasswordRecoveryController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\PlatformCompanyController;
-use App\Http\Controllers\Api\PasswordRecoveryController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\ProjectInventoryController;
@@ -76,6 +77,12 @@ Route::prefix('v1')->group(function () {
             Route::middleware('company.context')->group(function () {
                 Route::get('/company', [CompanyController::class, 'show']);
                 Route::match(['put', 'patch'], '/company', [CompanyController::class, 'update']);
+                Route::get('/clients/lookup', [ClientController::class, 'lookup']);
+                Route::get('/clients', [ClientController::class, 'index']);
+                Route::post('/clients', [ClientController::class, 'store']);
+                Route::get('/clients/{id}', [ClientController::class, 'show']);
+                Route::match(['put', 'patch'], '/clients/{id}', [ClientController::class, 'update']);
+                Route::delete('/clients/{id}', [ClientController::class, 'destroy']);
                 Route::get('/users', [UserController::class, 'index']);
                 Route::post('/users', [UserController::class, 'store']);
                 Route::get('/users/{id}', [UserController::class, 'show']);
@@ -99,10 +106,13 @@ Route::prefix('v1')->group(function () {
                 Route::delete('/departments/{id}', [DepartmentController::class, 'destroy']);
                 Route::get('/departments/{id}/users', [DepartmentController::class, 'users']);
                 Route::get('/projects', [ProjectController::class, 'index']);
+                Route::get('/projects/managers', [ProjectController::class, 'managers']);
+                Route::get('/projects/archived', [ProjectController::class, 'archived']);
                 Route::post('/projects', [ProjectController::class, 'store']);
                 Route::get('/projects/{id}', [ProjectController::class, 'show']);
                 Route::match(['put', 'patch'], '/projects/{id}', [ProjectController::class, 'update']);
                 Route::delete('/projects/{id}', [ProjectController::class, 'destroy']);
+                Route::post('/projects/{id}/restore', [ProjectController::class, 'restore']);
                 Route::patch('/projects/{id}/status', [ProjectController::class, 'status']);
                 Route::patch('/projects/{id}/progress', [ProjectController::class, 'progress']);
                 Route::get('/projects/{id}/team', [ProjectTeamController::class, 'show']);

@@ -16,12 +16,12 @@ class ProjectTeamController extends Controller
 {
     public function show(Request $request, TenantContext $tenant, int $id): JsonResponse
     {
+        if (! $request->user()->can('projects.view')) {
+            return $this->forbidden();
+        }
         $project = $this->project($request, $tenant, $id);
         if (! $project) {
             return $this->notFound();
-        }
-        if (! $request->user()->can('projects.assign') || ! $request->user()->can('manageTeam', $project)) {
-            return $this->forbidden();
         }
         $members = $project->members()->with('roles:id,name')->orderBy('users.name')->get();
 
@@ -97,7 +97,7 @@ class ProjectTeamController extends Controller
         return match ($type) {
             'supervisor' => $user->hasRole('site_supervisor'),
             'client' => $user->hasRole('client'),
-            'member' => $user->hasAnyRole(['company_admin', 'site_supervisor']),
+            'member' => $user->hasAnyRole(['company_admin', 'project_manager', 'site_supervisor']),
             default => false,
         };
     }

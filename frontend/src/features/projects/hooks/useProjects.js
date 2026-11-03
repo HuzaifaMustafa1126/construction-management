@@ -4,9 +4,9 @@ import { useAuth } from "../../auth/context/AuthContext";
 
 export function useProjectKeys() {
   const { user } = useAuth();
-  return { root: ["projects", user?.company?.id, user?.id], list: (params) => ["projects", user?.company?.id, user?.id, "list", params], detail: (id) => ["projects", user?.company?.id, user?.id, "detail", String(id)], team: (id) => ["projects", user?.company?.id, user?.id, "team", String(id)] };
+  return { root: ["projects", user?.company?.id, user?.id], list: (params) => ["projects", user?.company?.id, user?.id, "list", params], archived: (params) => ["projects", user?.company?.id, user?.id, "archived", params], managers: ["projects", user?.company?.id, user?.id, "managers"], detail: (id) => ["projects", user?.company?.id, user?.id, "detail", String(id)], team: (id) => ["projects", user?.company?.id, user?.id, "team", String(id)] };
 }
-export function useProjects(params) { const keys = useProjectKeys(); return useQuery({ queryKey: keys.list(params), queryFn: () => projectsApi.list(params) }); }
+export function useProjects(params, options = {}) { const keys = useProjectKeys(); const archived = options.archived === true; return useQuery({ queryKey: archived ? keys.archived(params) : keys.list(params), queryFn: () => archived ? projectsApi.archived(params) : projectsApi.list(params), enabled: options.enabled ?? true }); }
 export function useProject(id) { const keys = useProjectKeys(); return useQuery({ queryKey: keys.detail(id), queryFn: () => projectsApi.get(id), enabled: !!id }); }
 export function useProjectTeam(id, enabled = true) { const keys = useProjectKeys(); return useQuery({ queryKey: keys.team(id), queryFn: () => projectsApi.team(id), enabled: !!id && enabled, retry: false }); }
 export function useProjectMutation(action) {

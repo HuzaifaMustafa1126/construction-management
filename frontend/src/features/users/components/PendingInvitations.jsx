@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiMessage, staffInvitationsApi } from "../../../api/endpoints";
-import { AppAlert, AppBadge, AppButton, ConfirmDialog, SectionCard } from "../../../components/ui/AppUI";
+import { AppBadge, AppButton, ConfirmDialog, SectionCard } from "../../../components/ui/AppUI";
+import { AppAlert } from "../../../components/ui/Controls";
 import { toast } from "react-toastify";
 
 const date = (value) => value ? new Date(value).toLocaleString() : "—";

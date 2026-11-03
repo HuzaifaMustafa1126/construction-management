@@ -110,16 +110,37 @@ export const departmentsApi = {
   users: (id, params) =>
     api.get(`/v1/departments/${id}/users`, { params }).then((r) => r.data),
 };
+export const clientsApi = {
+  list: (params) => api.get("/v1/clients", { params }).then((r) => r.data),
+  lookup: (params) =>
+    api.get("/v1/clients/lookup", { params }).then((r) => unwrap(r)),
+  get: (id) => api.get(`/v1/clients/${id}`).then((r) => unwrap(r)),
+  create: (payload) => api.post("/v1/clients", payload).then((r) => unwrap(r)),
+  update: (id, payload) =>
+    api.patch(`/v1/clients/${id}`, payload).then((r) => unwrap(r)),
+  remove: (id) => api.delete(`/v1/clients/${id}`).then((r) => unwrap(r)),
+};
 export const projectsApi = {
   list: (params) => api.get("/v1/projects", { params }).then((r) => r.data),
+  archived: (params) =>
+    api.get("/v1/projects/archived", { params }).then((r) => r.data),
+  managers: () => api.get("/v1/projects/managers").then((r) => unwrap(r)),
   get: (id) => api.get(`/v1/projects/${id}`).then((r) => unwrap(r)),
   create: (payload) => api.post("/v1/projects", payload).then((r) => unwrap(r)),
-  update: (id, payload) => api.patch(`/v1/projects/${id}`, payload).then((r) => unwrap(r)),
+  update: (id, payload) =>
+    api.patch(`/v1/projects/${id}`, payload).then((r) => unwrap(r)),
   remove: (id) => api.delete(`/v1/projects/${id}`).then((r) => unwrap(r)),
-  status: (id, status) => api.patch(`/v1/projects/${id}/status`, { status }).then((r) => unwrap(r)),
-  progress: (id, progress_percentage) => api.patch(`/v1/projects/${id}/progress`, { progress_percentage }).then((r) => unwrap(r)),
+  restore: (id) =>
+    api.post(`/v1/projects/${id}/restore`).then((r) => unwrap(r)),
+  status: (id, status) =>
+    api.patch(`/v1/projects/${id}/status`, { status }).then((r) => unwrap(r)),
+  progress: (id, progress_percentage) =>
+    api
+      .patch(`/v1/projects/${id}/progress`, { progress_percentage })
+      .then((r) => unwrap(r)),
   team: (id) => api.get(`/v1/projects/${id}/team`).then((r) => unwrap(r)),
-  updateTeam: (id, members) => api.put(`/v1/projects/${id}/team`, { members }).then((r) => unwrap(r)),
+  updateTeam: (id, members) =>
+    api.put(`/v1/projects/${id}/team`, { members }).then((r) => unwrap(r)),
   overview: (id) =>
     api.get(`/v1/projects/${id}/overview`).then((r) => unwrap(r)),
 };

@@ -12,13 +12,22 @@ return new class extends Migration
 
     public function up(): void
     {
-        DB::statement(self::SECURE_DEFINITION);
+        $this->applySecureDefinition();
     }
 
     public function down(): void
     {
         // Forward-only security correction: never restore MariaDB's implicit
         // DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP behavior.
+        $this->applySecureDefinition();
+    }
+
+    private function applySecureDefinition(): void
+    {
+        if (! in_array(DB::connection()->getDriverName(), ['mysql', 'mariadb'], true)) {
+            return;
+        }
+
         DB::statement(self::SECURE_DEFINITION);
     }
 };

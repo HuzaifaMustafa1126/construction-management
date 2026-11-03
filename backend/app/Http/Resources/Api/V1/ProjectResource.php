@@ -13,6 +13,11 @@ class ProjectResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
+            'client' => $this->whenLoaded('client', fn () => $this->client ? [
+                'id' => $this->client->id,
+                'name' => $this->client->name,
+                'company_name' => $this->client->company_name,
+            ] : null),
             'description' => $this->description,
             'location' => $this->location,
             'address' => $this->address,
@@ -25,6 +30,7 @@ class ProjectResource extends JsonResource
             'actual_end_date' => $this->actual_end_date?->format('Y-m-d'),
             'budget' => $this->when($request->user()?->can('viewBudget', $this->resource), $this->budget),
             'currency' => $this->when($request->user()?->can('viewBudget', $this->resource), $this->currency),
+            'spent' => $this->when($request->user()?->can('viewBudget', $this->resource), '0.00'),
             'progress_percentage' => $this->progress_percentage,
             'status' => $this->status,
             'created_by' => $this->created_by,
@@ -35,6 +41,12 @@ class ProjectResource extends JsonResource
                 'supervisors' => $this->members->where('pivot.assignment_type', 'supervisor')->count(),
                 'clients' => $this->members->where('pivot.assignment_type', 'client')->count(),
             ]),
+            'project_manager' => $this->whenLoaded('members', function () {
+                $manager = $this->members->first(fn ($member) => $member->relationLoaded('roles')
+                    && $member->roles->contains('name', 'project_manager'));
+
+                return $manager ? ['id' => $manager->id, 'name' => $manager->name] : null;
+            }),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

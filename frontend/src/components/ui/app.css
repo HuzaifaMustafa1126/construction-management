@@ -558,8 +558,12 @@ summary:focus-visible {
 .workspace-heading>.app-button{display:none}
 .workspace-backdrop{display:none}
 .dashboard-project-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--space-4)}
+.project-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--space-4);margin-top:var(--space-4)}
+.project-card{display:flex;flex-direction:column;gap:var(--space-4);padding:var(--space-5);border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-surface)}
+.project-card header,.project-card footer{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-3)}
+.project-card header div,.project-card header small{display:block}.project-card dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3);margin:0}.project-card dt{color:var(--color-text-muted);font-size:var(--text-sm)}.project-card dd{margin:var(--space-1) 0 0;font-weight:600}.project-card footer{justify-content:flex-end;flex-wrap:wrap;margin-top:auto}
 @media(max-width:1024px){.dashboard-wrapper .sidebar{position:fixed;inset:0 auto 0 0;z-index:50;transform:translateX(-100%);transition:transform .2s ease}.dashboard-wrapper.sidebar-open .sidebar{transform:translateX(0)}.dashboard-wrapper.sidebar-open .workspace-backdrop{display:block;position:fixed;inset:0;z-index:40;border:0;background:var(--color-overlay)}.workspace-heading>.app-button{display:inline-flex}.dashboard-main{margin-left:0!important}.navbar-header{gap:var(--space-3)}}
-@media(max-width:640px){.navbar-header,.workspace-user{align-items:flex-start;flex-direction:column}.workspace-user{width:100%}.workspace-user>.app-button{width:100%}.dashboard-project-grid{grid-template-columns:1fr}}
+@media(max-width:640px){.navbar-header,.workspace-user{align-items:flex-start;flex-direction:column}.workspace-user{width:100%}.workspace-user>.app-button{width:100%}.dashboard-project-grid,.project-card-grid{grid-template-columns:1fr}.project-card dl{grid-template-columns:1fr}}
 .profile-menu-identity{display:grid;gap:2px;padding:8px 12px;border-bottom:1px solid var(--app-border)}
 .profile-menu-identity small{color:var(--app-muted)}
 .app-dropdown>div>a,.app-dropdown>div>button{display:flex;width:100%;align-items:center;gap:8px;padding:9px 12px}

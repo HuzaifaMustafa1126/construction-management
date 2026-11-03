@@ -18,6 +18,7 @@ class ListProjectsRequest extends FormRequest
         return [
             'search' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', Rule::in(Project::STATUSES)],
+            'project_manager_id' => ['nullable', 'integer', 'min:1'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
             'sort' => ['nullable', Rule::in(['name', 'code', 'status', 'start_date', 'expected_end_date', 'created_at'])],

@@ -5,7 +5,8 @@ const optionalDate = z.string().optional();
 
 export const projectSchema = z.object({
   name: z.string().trim().min(1, "Project name is required.").max(255),
-  code: z.string().trim().min(1, "Project code is required.").max(75).regex(/^[A-Za-z0-9_-]+$/, "Use letters, numbers, hyphens, or underscores."),
+  code: z.union([z.literal(""), z.string().trim().max(75).regex(/^[A-Za-z0-9_-]+$/, "Use letters, numbers, hyphens, or underscores.")]),
+  client_id: z.number().int().positive().nullable().optional(),
   description: optionalText(5000),
   location: optionalText(255),
   address: optionalText(2000),

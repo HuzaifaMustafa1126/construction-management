@@ -11,6 +11,9 @@ class ProjectOverviewResource extends JsonResource
     {
         return [
             'id' => $this->id, 'name' => $this->name, 'code' => $this->code,
+            'client' => $this->whenLoaded('client', fn () => $this->client ? [
+                'id' => $this->client->id, 'name' => $this->client->name, 'company_name' => $this->client->company_name,
+            ] : null),
             'status' => $this->status, 'progress_percentage' => $this->progress_percentage,
             'start_date' => $this->start_date?->format('Y-m-d'),
             'expected_end_date' => $this->expected_end_date?->format('Y-m-d'),

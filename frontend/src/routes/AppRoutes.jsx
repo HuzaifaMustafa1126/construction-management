@@ -52,6 +52,10 @@ const DepartmentsPage = lazy(
   () => import("../features/departments/pages/DepartmentsPage"),
 );
 const ProjectsPage = lazy(() => import("../features/projects/pages/ProjectsPage"));
+const ClientsPage = lazy(() => import("../features/clients/pages/ClientsPage"));
+const ClientDetailsPage = lazy(() => import("../features/clients/pages/ClientDetailsPage"));
+const CreateClientPage = lazy(() => import("../features/clients/pages/ClientFormPages").then((module) => ({ default: module.CreateClientPage })));
+const EditClientPage = lazy(() => import("../features/clients/pages/ClientFormPages").then((module) => ({ default: module.EditClientPage })));
 const CreateProjectPage = lazy(() => import("../features/projects/pages/CreateProjectPage"));
 const ProjectDetailsPage = lazy(() => import("../features/projects/pages/ProjectDetailsPage"));
 const EditProjectPage = lazy(() => import("../features/projects/pages/EditProjectPage"));
@@ -169,6 +173,18 @@ export default function AppRoutes() {
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/projects/:id" element={<ProjectDetailsPage />} />
           </Route>
+        </Route>
+        <Route element={<ProtectedRoute permission="clients.view" />}>
+          <Route element={<WorkspaceLayout />}>
+            <Route path="/clients" element={<ClientsPage />} />
+            <Route path="/clients/:id" element={<ClientDetailsPage />} />
+          </Route>
+        </Route>
+        <Route element={<ProtectedRoute permission="clients.create" />}>
+          <Route element={<WorkspaceLayout />}><Route path="/clients/new" element={<CreateClientPage />} /></Route>
+        </Route>
+        <Route element={<ProtectedRoute permission="clients.update" />}>
+          <Route element={<WorkspaceLayout />}><Route path="/clients/:id/edit" element={<EditClientPage />} /></Route>
         </Route>
         <Route element={<ProtectedRoute permission="projects.create" />}>
           <Route element={<WorkspaceLayout />}>

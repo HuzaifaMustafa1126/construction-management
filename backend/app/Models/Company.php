@@ -79,6 +79,11 @@ class Company extends Model
         return $this->hasMany(Project::class);
     }
 
+    public function clients(): HasMany
+    {
+        return $this->hasMany(Client::class);
+    }
+
     public function dailySiteReports(): HasMany
     {
         return $this->hasMany(DailySiteReport::class);

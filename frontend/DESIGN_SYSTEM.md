@@ -28,6 +28,8 @@ Shared modals receive focus when opened, close with Escape, restore prior focus 
 
 Projects reuse `PageHeader`, `SectionCard`, shared form controls, `ConfirmDialog`, `AppBadge`, `AppAlert`, and the global `DataTable`. The table accepts optional `sortable` and `paginated` flags so server-owned project sorting and pagination are not misrepresented as whole-dataset client operations. Project-specific responsive grids consume semantic tokens from the existing theme only.
 
+The project portfolio card view is a responsive alternative presentation of the same server-owned page and filters as the list view. Cards use semantic surface, border, text, spacing, and radius tokens; action visibility uses exact effective permissions. Project detail navigation uses the shared tab control for Overview and Team without placeholder phase/task tabs.
+
 Daily reports reuse the same primitives and global table. The only shared icon addition is the Heroicons Outline `ClipboardDocumentListIcon` registered as `reports`. Workforce rows, report metadata, review controls, and project report cards use semantic tokens and collapse to single-column controls on small screens; no alternate component or theme system was introduced.
 
 Site photos add only the Heroicons Outline `CameraIcon` under the shared `photos` registry name. Feature-local gallery cards, protected-image placeholders, upload previews/progress, and the viewer use existing controls and semantic tokens. Grids preserve image aspect ratio and collapse to one column on small screens.

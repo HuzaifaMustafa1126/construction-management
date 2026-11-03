@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Client;
 use App\Models\DailySiteReport;
 use App\Models\MaterialConsumption;
 use App\Models\MaterialDelivery;
@@ -10,6 +11,7 @@ use App\Models\Project;
 use App\Models\ProjectInventory;
 use App\Models\SitePhoto;
 use App\Models\Supplier;
+use App\Policies\ClientPolicy;
 use App\Policies\DailySiteReportPolicy;
 use App\Policies\MaterialConsumptionPolicy;
 use App\Policies\MaterialDeliveryPolicy;
@@ -19,10 +21,10 @@ use App\Policies\ProjectPolicy;
 use App\Policies\SitePhotoPolicy;
 use App\Policies\SupplierPolicy;
 use App\Support\Tenancy\TenantContext;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -42,6 +44,7 @@ class AppServiceProvider extends ServiceProvider
     {
         ResetPassword::createUrlUsing(function ($user, string $token): string {
             $frontend = rtrim((string) config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:5173')), '/');
+
             return $frontend.'/administrator/password/setup?token='.urlencode($token).'&email='.urlencode($user->getEmailForPasswordReset());
         });
         RateLimiter::for('company-registration', fn ($request) => Limit::perHour(5)->by('company-registration:'.$request->ip()));
@@ -55,6 +58,7 @@ class AppServiceProvider extends ServiceProvider
             ->by('staff-invitations-accept:'.$request->ip()));
 
         Gate::policy(Project::class, ProjectPolicy::class);
+        Gate::policy(Client::class, ClientPolicy::class);
         Gate::policy(ProjectInventory::class, ProjectInventoryPolicy::class);
         Gate::policy(Supplier::class, SupplierPolicy::class);
         Gate::policy(MaterialDelivery::class, MaterialDeliveryPolicy::class);

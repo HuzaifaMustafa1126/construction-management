@@ -32,6 +32,7 @@ class UpdateProjectRequest extends FormRequest
             'expected_end_date' => ['sometimes', 'nullable', $start ? Rule::date()->afterOrEqual($start) : Rule::date()],
             'actual_end_date' => ['sometimes', 'nullable', $start ? Rule::date()->afterOrEqual($start) : Rule::date()],
             'budget' => ['sometimes', 'numeric', 'min:0', 'max:9999999999999.99'],
+            'client_id' => ['sometimes', 'nullable', 'integer', $this->validClient($project)],
             'company_id' => ['prohibited'], 'currency' => ['prohibited'], 'created_by' => ['prohibited'],
             'updated_by' => ['prohibited'], 'status' => ['prohibited'], 'progress_percentage' => ['prohibited'],
             'members' => ['prohibited'], 'team' => ['prohibited'],
@@ -47,6 +48,19 @@ class UpdateProjectRequest extends FormRequest
             if (DB::table('projects')->where('company_id', $project->company_id)->whereNull('deleted_at')
                 ->where('id', '!=', $project->id)->whereRaw('lower(code) = ?', [mb_strtolower((string) $value)])->exists()) {
                 $fail('The project code has already been taken.');
+            }
+        };
+    }
+
+    private function validClient(?Project $project): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail) use ($project): void {
+            if (! $project || $value === null) {
+                return;
+            }
+            if (! DB::table('clients')->where('company_id', $project->company_id)
+                ->whereNull('deleted_at')->where('id', $value)->exists()) {
+                $fail('The selected client is unavailable.');
             }
         };
     }

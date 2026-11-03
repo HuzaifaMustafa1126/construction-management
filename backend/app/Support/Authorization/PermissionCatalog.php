@@ -17,7 +17,8 @@ final class PermissionCatalog
 
     public const GROUPS = [
         'dashboard' => ['dashboard.view'],
-        'projects' => ['projects.view', 'projects.create', 'projects.edit', 'projects.delete', 'projects.assign', 'projects.budget.view'],
+        'projects' => ['projects.view', 'projects.create', 'projects.edit', 'projects.delete', 'projects.restore', 'projects.assign', 'projects.budget.view'],
+        'clients' => ['clients.view', 'clients.create', 'clients.update', 'clients.delete'],
         'tasks' => ['tasks.view', 'tasks.create', 'tasks.assign', 'tasks.complete'],
         'daily_reports' => ['daily_reports.view', 'daily_reports.create', 'daily_reports.approve'],
         'daily_report_management' => ['site_reports.update', 'site_reports.delete'],

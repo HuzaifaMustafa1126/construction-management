@@ -17,7 +17,7 @@ The active application is JavaScript/JSX only. Runtime modules use `.js`, React 
 - `src/App.jsx`: provider and router composition only.
 - `src/main.jsx`: application bootstrap and global stylesheet imports.
 
-The application currently has active features for auth, platform administration, dashboard, company, users, roles, departments, projects, daily reports, site photos, profile, and settings. Business features own API exports, identity-scoped query hooks, runtime schemas, components, and lazy route pages. Empty feature placeholders are not created.
+The application currently has active features for auth, platform administration, dashboard, company, users, roles, departments, clients, projects, daily reports, site photos, profile, and settings. Business features own API exports, identity-scoped query hooks, runtime schemas, components, and lazy route pages. Empty feature placeholders are not created.
 
 ## Routing and authorization
 
@@ -27,7 +27,9 @@ The application currently has active features for auth, platform administration,
 
 `src/api/axiosClient.js` is the only active Axios instance. It attaches the session token and normalizes failures. `src/api/endpoints.js` defines shared resource calls without changing existing payloads or response handling. Auth and company identity live in `features/auth/context/AuthContext.jsx`; identity changes clear protected query cache.
 
-Project list/detail/team query keys include the authenticated company and user IDs. `/projects`, `/projects/new`, `/projects/:id`, and `/projects/:id/edit` are lazy company-workspace routes gated by their corresponding effective permission; Laravel policies additionally enforce assignment and tenant access.
+Project list/detail/team query keys include the authenticated company and user IDs. `/projects`, `/projects/new`, `/projects/:id`, and `/projects/:id/edit` are lazy company-workspace routes gated by their corresponding effective permission; Laravel policies additionally enforce assignment and tenant access. The portfolio supports card/list presentation over the same server-filtered page, including project-manager filtering. Archived project listing and restoration require `projects.restore`; no permanent-delete UI exists. Project details retain Overview integrations and expose the authorized Team view as a separate tab.
+
+Client list/detail query keys are company/user scoped. `/clients` CRUD routes use exact `clients.*` presentation permissions. Project create/edit uses the separate server-authorized client lookup endpoint so authorized project editors can search the complete tenant client directory without receiving general `clients.view` access.
 
 Daily report query keys add the project ID because Laravel exposes only project-nested report APIs. `/daily-reports` requires a selected authorized project; details and edit URLs retain that project as a query parameter so the nested resource can be addressed without inventing a global endpoint. Create, update, submit, review, visibility, and delete mutations invalidate identity-scoped report, project, and dashboard caches.
 

@@ -28,6 +28,11 @@ class ProjectPolicy
         return $this->sameCompany($user, $project) && $user->hasRole('company_admin');
     }
 
+    public function restore(User $user, Project $project): bool
+    {
+        return $this->sameCompany($user, $project) && $user->can('projects.restore');
+    }
+
     public function viewBudget(User $user, Project $project): bool
     {
         return $this->view($user, $project) && $user->can('projects.budget.view');

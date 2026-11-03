@@ -20,7 +20,8 @@ class StoreProjectRequest extends FormRequest
 
         return array_merge($this->projectFields(), [
             'name' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'max:75', 'regex:/^[A-Za-z0-9_-]+$/', $this->uniqueCode($companyId)],
+            'code' => ['nullable', 'string', 'max:75', 'regex:/^[A-Za-z0-9_-]+$/', $this->uniqueCode($companyId)],
+            'client_id' => ['nullable', 'integer', $this->validClient($companyId)],
             'company_id' => ['prohibited'], 'currency' => ['prohibited'],
             'created_by' => ['prohibited'], 'updated_by' => ['prohibited'],
             'status' => ['prohibited'], 'progress_percentage' => ['prohibited'],
@@ -47,6 +48,16 @@ class StoreProjectRequest extends FormRequest
             if (DB::table('projects')->where('company_id', $companyId)->whereNull('deleted_at')
                 ->whereRaw('lower(code) = ?', [mb_strtolower((string) $value)])->exists()) {
                 $fail('The project code has already been taken.');
+            }
+        };
+    }
+
+    private function validClient(int $companyId): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail) use ($companyId): void {
+            if ($value !== null && ! DB::table('clients')->where('company_id', $companyId)
+                ->whereNull('deleted_at')->where('id', $value)->exists()) {
+                $fail('The selected client is unavailable.');
             }
         };
     }

@@ -204,6 +204,20 @@ All photo APIs are project-nested. `GET /projects/{id}/photos` supports caption 
 
 ## Materials and project inventory
 
+## Clients and project assignment
+
+`/clients` provides tenant-scoped paginated CRUD for business client records and uses `clients.view|create|update|delete`. Client records are not users and never receive login invitations. Search covers client name, company name, email and phone. A client with any non-deleted linked project cannot be deleted.
+
+`GET /clients/lookup?search=&selected_id=&limit=` is available to users with `projects.create` or `projects.edit`; it returns only minimal same-company active client identity for the project selector and does not require `clients.view`. Project create/update accepts nullable `client_id`, validates it against an active same-company client, and project resources include minimal client identity.
+
+## Project portfolio completion
+
+`GET /projects` supports server-owned search, status, `project_manager_id`, sorting and pagination. Non-Company-Admin identities receive only projects where they have a `project_user` membership; detail, team read and downstream project-nested APIs retain the same policy boundary. `GET /projects/managers` returns active project managers attached to projects visible to the caller.
+
+Project `code` is optional on create. When omitted, Laravel allocates a company-scoped `PRJ-0001` style code through a locked counter row inside the project creation transaction. Explicit codes remain supported and case-insensitively unique among active projects. Existing codes are unchanged.
+
+`GET /projects/archived` and `POST /projects/{id}/restore` require `projects.restore`. Archive and restore preserve memberships and dependent history; there is no permanent deletion endpoint. Restoration returns 422 if an active project now uses the archived code. Project resources include minimal client and assigned project-manager identity, backend-authorized budget/currency, and a literal `spent: "0.00"` placeholder until the expense module supplies an authoritative aggregate.
+
 `/materials` provides tenant-scoped catalog CRUD using category and measurement-unit IDs. Clients are denied catalog access and supervisors are view-only. `/projects/{id}/inventory` returns backend-calculated current stock, minimum levels, overview metrics, opening-stock state, and immutable transaction history. Quantities are decimal strings using unit precision; browser payloads never include company IDs or balances.
 
 Laravel also exposes supplier-backed delivery, consumption, adjustment, and inventory-reporting document workflows. Transfers do not exist. The current frontend does not simulate these multi-step posting workflows with direct balance edits.

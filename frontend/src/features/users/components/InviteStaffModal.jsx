@@ -4,7 +4,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiMessage, applyServerErrors, staffInvitationsApi } from "../../../api/endpoints";
-import { AppAlert, AppButton, AppInput, AppModal } from "../../../components/ui/AppUI";
+import { AppButton, AppInput, AppModal } from "../../../components/ui/AppUI";
+import { AppAlert } from "../../../components/ui/Controls";
 
 const schema = z.object({
   email: z.string().trim().email("Enter a valid email address").max(255),

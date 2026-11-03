@@ -1,19 +1,21 @@
 /* eslint-disable react/prop-types */
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { AppButton, AppInput } from "../../../components/ui/AppUI";
 import { AppTextarea } from "../../../components/ui/Controls";
 import { applyServerErrors, apiMessage } from "../../../api/endpoints";
 import { projectPayload, projectSchema } from "../schemas/projectSchema";
+import ClientSelector from "../../clients/components/ClientSelector";
 
-const defaults = { name: "", code: "", description: "", location: "", address: "", city: "", state: "", country: "", postal_code: "", start_date: "", expected_end_date: "", actual_end_date: "", budget: "" };
+const defaults = { name: "", code: "", client_id: null, description: "", location: "", address: "", city: "", state: "", country: "", postal_code: "", start_date: "", expected_end_date: "", actual_end_date: "", budget: "" };
 export default function ProjectForm({ initialValues, onSubmit, onCancel, submitLabel }) {
-  const form = useForm({ resolver: zodResolver(projectSchema), values: { ...defaults, ...initialValues, budget: initialValues?.budget ?? "" } });
+  const form = useForm({ resolver: zodResolver(projectSchema), values: { ...defaults, ...initialValues, client_id: initialValues?.client?.id ?? initialValues?.client_id ?? null, budget: initialValues?.budget ?? "" } });
   const submit = form.handleSubmit(async (values) => { try { await onSubmit(projectPayload(values)); } catch (error) { applyServerErrors(error, form.setError); form.setError("root", { message: apiMessage(error, "The project could not be saved.") }); } });
   return <form onSubmit={submit} className="form-grid" noValidate>
     {form.formState.errors.root && <div className="error-banner full" role="alert">{form.formState.errors.root.message}</div>}
     <AppInput label="Project name" required {...form.register("name")} error={form.formState.errors.name?.message}/>
-    <AppInput label="Project code" required {...form.register("code")} error={form.formState.errors.code?.message}/>
+    <AppInput label="Project code" placeholder="Generated automatically when blank" {...form.register("code")} error={form.formState.errors.code?.message}/>
+    <Controller name="client_id" control={form.control} render={({ field, fieldState }) => <ClientSelector value={field.value} onChange={field.onChange} error={fieldState.error?.message}/>}/>
     <div className="full"><AppTextarea label="Description" rows="4" {...form.register("description")} error={form.formState.errors.description?.message}/></div>
     <AppInput label="Location" {...form.register("location")} error={form.formState.errors.location?.message}/>
     <AppInput label="Address" {...form.register("address")} error={form.formState.errors.address?.message}/>
