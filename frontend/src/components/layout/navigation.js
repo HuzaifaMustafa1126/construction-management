@@ -1,7 +1,16 @@
 export const companyNavigation = [
   {
     label: "Overview",
-    items: [{ label: "Dashboard", route: "/dashboard", icon: "dashboard" }],
+    items: [
+      {
+        label: "Dashboard",
+        mobileLabel: "Home",
+        route: "/dashboard",
+        icon: "dashboard",
+        permission: "dashboard.view",
+        mobile: true,
+      },
+    ],
   },
   {
     label: "Work",
@@ -11,6 +20,7 @@ export const companyNavigation = [
         route: "/projects",
         icon: "projects",
         permission: "projects.view",
+        mobile: true,
       },
       {
         label: "Clients",
@@ -23,12 +33,14 @@ export const companyNavigation = [
         route: "/daily-reports",
         icon: "reports",
         permission: "daily_reports.view",
+        mobile: true,
       },
       {
         label: "Site Photos",
         route: "/site-photos",
         icon: "photos",
         permission: "photos.view",
+        mobile: true,
       },
       {
         label: "Materials",

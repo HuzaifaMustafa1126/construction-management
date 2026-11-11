@@ -42,6 +42,10 @@ Materials use lazy catalog and project-inventory routes. Their query keys includ
 
 The old unrouted WowDash demo pages, layers, helpers, charts, duplicate services, and `MasterLayout` are preserved in `legacy-template/` outside `src`. Nothing in the maintained application imports that archive. It is excluded from active linting and bundling and can be inspected or selectively migrated later.
 
+The maintained workspace shell uses a fixed desktop sidebar and top bar, a permission-filtered mobile bottom navigation, and an authorized Daily Report shortcut. Shell structure was adapted from the archived `MasterLayout` patterns, while its mock navigation, data, service layer, icon system, and theme implementation remain excluded. Shared shell sizing and colors are semantic theme tokens; page content remains feature-owned.
+
+The company dashboard top section owns its heading, authorized project/period filters, and six-card KPI presentation under `src/features/dashboard`. Dashboard query keys include company, user, project, and period scope. Total and active project counts use server pagination metadata and are current snapshots; project scope applies to those counts. Period scope applies to the project-nested material-consumption summary. Unsupported labour attendance, client receivables, and contract-value metrics remain explicit unavailable states rather than client-derived estimates, and their cards follow the corresponding effective permissions.
+
 ## Verification boundary
 
 The maintained Vitest command covers authentication, route authorization, platform company editing and administrator setup, company dashboard behavior, company profile permissions and refresh, users/roles/departments presentation authorization, profile/password flows, settings persistence, permission selection, and shared modal/form accessibility. Laravel feature tests remain the authoritative verification for tenant isolation and mutation authorization.

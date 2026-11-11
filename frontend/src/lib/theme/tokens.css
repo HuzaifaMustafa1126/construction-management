@@ -25,6 +25,10 @@
   --radius-xl: 1.125rem;
   --shadow-sm: 0 1px 2px rgb(15 23 42/0.06);
   --shadow-md: 0 8px 24px rgb(15 23 42/0.09);
+  --shell-sidebar-width: 264px;
+  --shell-sidebar-collapsed-width: 80px;
+  --shell-topbar-height: 72px;
+  --shell-content-max: 1600px;
   --focus-ring: 0 0 0 3px
     color-mix(in srgb, var(--color-primary) 25%, transparent);
   --breakpoint-sm: 640px;

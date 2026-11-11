@@ -1,142 +1,188 @@
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { projectsApi } from "../../../api/endpoints";
-import api from "../../../api/axiosClient";
+import { AppAlert, AppSkeleton } from "../../../components/ui/Controls";
+import { AppBadge, EmptyState, SectionCard } from "../../../components/ui/AppUI";
 import { useAuth, useCompany } from "../../auth/context/AuthContext";
-import {
-  AppAlert,
-  AppSkeleton,
-  StatCard,
-} from "../../../components/ui/Controls";
-import {
-  AppBadge,
-  EmptyState,
-  PageHeader,
-  SectionCard,
-} from "../../../components/ui/AppUI";
+import DashboardHeader from "../components/DashboardHeader";
+import DashboardMetricCard from "../components/DashboardMetricCard";
+import { useDashboardSummary } from "../hooks/useDashboardSummary";
 
-const personName = (u) =>
-  u?.name || [u?.first_name, u?.last_name].filter(Boolean).join(" ") || "there";
-const roleNames = (u) =>
-  (u?.roles || [])
-    .map((r) => (typeof r === "string" ? r : r?.name))
+const personName = (user) =>
+  user?.name ||
+  [user?.first_name, user?.last_name].filter(Boolean).join(" ") ||
+  "there";
+
+const roleNames = (user) =>
+  (user?.roles || [])
+    .map((role) => (typeof role === "string" ? role : role?.name))
     .filter(Boolean);
-const roleLabel = (u) => roleNames(u).join(", ") || u?.role || "Company user";
+
 const actions = [
   ["Manage users", "/users", "users.view"],
   ["Manage roles", "/roles", "roles.view"],
   ["Manage departments", "/departments", "departments.view"],
   ["Company profile", "/company", "company.view"],
 ];
+
+const monthRange = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
+  return {
+    from: `${year}-${month}-01`,
+    to: `${year}-${month}-${String(lastDay).padStart(2, "0")}`,
+  };
+};
+
 export default function CompanyDashboard() {
   const { user, can } = useAuth();
-  const { company, companyError } = useCompany();
-  const projects = useQuery({
-    queryKey: ["company", company?.id, "dashboard-projects", user?.id],
-    queryFn: () =>
-      projectsApi.list({
-        page: 1,
-        per_page: 6,
-        sort: "created_at",
-        direction: "desc",
-      }),
-    enabled: !!company && can("projects.view"),
+  const { companyError } = useCompany();
+  const initialRange = useMemo(monthRange, []);
+  const [projectId, setProjectId] = useState("");
+  const [period, setPeriod] = useState("month");
+  const [customFrom, setCustomFrom] = useState(initialRange.from);
+  const [customTo, setCustomTo] = useState(initialRange.to);
+  const dateFrom = period === "month" ? initialRange.from : customFrom;
+  const dateTo = period === "month" ? initialRange.to : customTo;
+  const dateError =
+    dateFrom && dateTo && dateFrom > dateTo
+      ? "Start date must be on or before the end date."
+      : "";
+  const summary = useDashboardSummary({
+    projectId,
+    dateFrom: dateError ? "" : dateFrom,
+    dateTo: dateError ? "" : dateTo,
   });
-  const rows = projects.data?.data || [];
-  const inventory = useQuery({ queryKey: ["dashboard", company?.id, user?.id, "inventory-overview"], queryFn: () => api.get("/v1/inventory-reports/overview").then((response) => response.data.data), enabled: !!company && can("inventory_reports.view_company"), retry: false });
-  const total = projects.data?.meta?.total;
+  const projects = summary.projects;
+  const rows = projects.data?.slice(0, 6) || [];
   const roles = roleNames(user);
-  const audience = roles.includes("site_supervisor")
-    ? "Your assigned construction projects and authorized site operations."
-    : roles.includes("client")
-      ? "Projects and progress shared with your account."
-      : "Manage your company workspace and authorized construction operations.";
+
   return (
     <>
-      <PageHeader
-        title={`Welcome, ${personName(user)}`}
-        description={audience}
+      <DashboardHeader
+        name={personName(user)}
+        projects={projects}
+        projectId={projectId}
+        onProjectChange={setProjectId}
+        period={period}
+        onPeriodChange={setPeriod}
+        dateFrom={customFrom}
+        dateTo={customTo}
+        onDateFromChange={setCustomFrom}
+        onDateToChange={setCustomTo}
+        dateError={dateError}
       />
       {companyError && (
         <AppAlert tone="warning">
           Some company profile details are restricted for your account.
         </AppAlert>
       )}
-      <SectionCard title="Workspace">
-        <div className="profile-grid">
-          <div className="profile-item">
-            <small>Company</small>
-            <strong>
-              {company?.name || user?.company?.name || "Company workspace"}
-            </strong>
-          </div>
-          <div className="profile-item">
-            <small>Signed in as</small>
-            <strong>{personName(user)}</strong>
-          </div>
-          <div className="profile-item">
-            <small>Role</small>
-            <strong>{roleLabel(user)}</strong>
-          </div>
-        </div>
-      </SectionCard>
+      {dateError && <AppAlert tone="warning">{dateError}</AppAlert>}
+
+      <section className="dashboard-metric-grid" aria-label="Dashboard metrics">
+        {can("projects.view") && (
+          <DashboardMetricCard
+            icon="company"
+            label="Total projects"
+            metric={summary.totalValue}
+            support={projectId ? "Selected project" : "Authorized projects"}
+            tone="blue"
+          />
+        )}
+        {can("projects.view") && (
+          <DashboardMetricCard
+            icon="projects"
+            label="Active projects"
+            metric={summary.activeValue}
+            support={summary.activeSupport}
+            tone="green"
+          />
+        )}
+        {can("workers.view") && (
+          <DashboardMetricCard
+            icon="users"
+            label="Today's labour count"
+            metric={{
+              state: "unavailable",
+              message: "Attendance data unavailable",
+            }}
+            tone="orange"
+          />
+        )}
+        {can("material_consumptions.view") && (
+          <DashboardMetricCard
+            icon="materials"
+            label="Material consumption"
+            metric={summary.consumptionValue}
+            tone="purple"
+          />
+        )}
+        {can("payments.view") && (
+          <DashboardMetricCard
+            icon="budget"
+            label="Pending client payments"
+            metric={{
+              state: "unavailable",
+              message: "Receivables data unavailable",
+            }}
+            tone="coral"
+          />
+        )}
+        {can("projects.budget.view") && (
+          <DashboardMetricCard
+            icon="chart"
+            label="Total project value"
+            metric={{
+              state: "unavailable",
+              message: "Contract value unavailable",
+            }}
+            tone="cyan"
+          />
+        )}
+      </section>
+
       {can("projects.view") && (
-        <>
-          <div className="stats-grid">
-            <StatCard
-              label={
-                roles.includes("company_admin")
-                  ? "Total projects"
-                  : "Authorized projects"
-              }
-              value={projects.isLoading ? "…" : (total ?? 0)}
+        <SectionCard
+          title={
+            roles.includes("company_admin") ? "Recent projects" : "Your projects"
+          }
+        >
+          {projects.isLoading ? (
+            <div className="dashboard-project-grid">
+              <AppSkeleton />
+              <AppSkeleton />
+            </div>
+          ) : projects.isError ? (
+            <AppAlert tone="danger">
+              Projects could not be loaded. Please try again.
+            </AppAlert>
+          ) : rows.length ? (
+            <div className="dashboard-project-grid">
+              {rows.map((project) => (
+                <article className="profile-item" key={project.id}>
+                  <div className="button-group">
+                    <strong>{project.name}</strong>
+                    <AppBadge
+                      tone={project.status === "active" ? "success" : "neutral"}
+                    >
+                      {project.status}
+                    </AppBadge>
+                  </div>
+                  <small>{project.code}</small>
+                  <p>Progress: {project.progress_percentage ?? 0}%</p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              title="No authorized projects"
+              description="Projects assigned or shared with you will appear here."
             />
-            {can("inventory_reports.view_company") && <><StatCard label="Low-stock materials" value={inventory.isLoading ? "…" : (inventory.data?.low_stock_count ?? "—")}/><StatCard label="Out-of-stock materials" value={inventory.isLoading ? "…" : (inventory.data?.out_of_stock_count ?? "—")}/></>}
-          </div>
-          <SectionCard
-            title={
-              roles.includes("company_admin")
-                ? "Recent projects"
-                : "Your projects"
-            }
-          >
-            {projects.isLoading ? (
-              <div className="dashboard-project-grid">
-                <AppSkeleton />
-                <AppSkeleton />
-              </div>
-            ) : projects.isError ? (
-              <AppAlert tone="danger">
-                Projects could not be loaded. Please try again.
-              </AppAlert>
-            ) : rows.length ? (
-              <div className="dashboard-project-grid">
-                {rows.map((project) => (
-                  <article className="profile-item" key={project.id}>
-                    <div className="button-group">
-                      <strong>{project.name}</strong>
-                      <AppBadge
-                        tone={
-                          project.status === "active" ? "success" : "neutral"
-                        }
-                      >
-                        {project.status}
-                      </AppBadge>
-                    </div>
-                    <small>{project.code}</small>
-                    <p>Progress: {project.progress_percentage ?? 0}%</p>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                title="No authorized projects"
-                description="Projects assigned or shared with you will appear here."
-              />
-            )}
-          </SectionCard>
-        </>
+          )}
+        </SectionCard>
       )}
+
       <SectionCard title="Quick actions">
         <div className="button-group">
           {actions

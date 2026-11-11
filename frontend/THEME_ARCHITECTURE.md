@@ -10,4 +10,6 @@ The active theme implementation lives in `src/lib/theme` and has one source of t
 
 The application supports light/dark modes and blue/green/orange accents. Settings remain browser-local and have no authorization or backend-data effect. The archived WowDash theme files under `legacy-template/` are not part of the runtime theme system.
 
+The workspace shell adds semantic sidebar, shell-accent, top-bar, and content-width tokens. The fixed navy navigation and restrained orange active/action treatment are consistent across accent choices, while page controls continue to honor the user's selected accent and light/dark mode.
+
 Phase 2 verification confirms that mode, accent, density, and sidebar settings persist through the Zustand store and that active status/overlay styles consume semantic variables rather than fixed light-theme colors.

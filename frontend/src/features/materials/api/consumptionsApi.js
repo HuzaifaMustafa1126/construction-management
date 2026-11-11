@@ -3,6 +3,7 @@ const unwrap = (response) => response?.data?.data ?? response?.data;
 const base = (projectId) => `/v1/projects/${projectId}/material-consumptions`;
 export const consumptionsApi = {
   list: (projectId, params) => api.get(base(projectId), { params }).then((response) => response.data),
+  summary: (projectId, params) => api.get(`${base(projectId)}/summary`, { params }).then(unwrap),
   get: (projectId, id) => api.get(`${base(projectId)}/${id}`).then(unwrap),
   create: (projectId, payload) => api.post(base(projectId), payload).then(unwrap),
   update: (projectId, id, payload) => api.patch(`${base(projectId)}/${id}`, payload).then(unwrap),
