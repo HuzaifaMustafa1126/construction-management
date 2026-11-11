@@ -72,6 +72,10 @@ export default function ProjectForm({
         control={form.control}
         render={({ field, fieldState }) => (
           <ClientSelector
+            ref={field.ref}
+            name={field.name}
+            onBlur={field.onBlur}
+            selectedClient={initialValues?.client}
             value={field.value}
             onChange={field.onChange}
             error={fieldState.error?.message}

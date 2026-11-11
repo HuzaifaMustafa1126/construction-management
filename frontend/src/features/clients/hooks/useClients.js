@@ -34,7 +34,7 @@ export function useClientLookup(params, enabled = true) {
   const keys = useClientKeys();
   return useQuery({
     queryKey: keys.lookup(params),
-    queryFn: () => clientsApi.lookup(params),
+    queryFn: ({ signal }) => clientsApi.lookup(params, { signal }),
     enabled,
     staleTime: 30000,
   });

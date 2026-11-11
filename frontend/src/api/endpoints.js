@@ -112,8 +112,8 @@ export const departmentsApi = {
 };
 export const clientsApi = {
   list: (params) => api.get("/v1/clients", { params }).then((r) => r.data),
-  lookup: (params) =>
-    api.get("/v1/clients/lookup", { params }).then((r) => unwrap(r)),
+  lookup: (params, { signal } = {}) =>
+    api.get("/v1/clients/lookup", { params, signal }).then((r) => unwrap(r)),
   get: (id) => api.get(`/v1/clients/${id}`).then((r) => unwrap(r)),
   create: (payload) => api.post("/v1/clients", payload).then((r) => unwrap(r)),
   update: (id, payload) =>

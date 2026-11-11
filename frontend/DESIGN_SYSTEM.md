@@ -93,3 +93,9 @@ Projects searches its static statuses and complete authorized meta.project_manag
 | Workspace brand / .sidebar-brand-copy strong and .workspace-heading strong | 1.125rem brand, 1rem workspace label; navy/orange shell | Intentional navigation hierarchy retained; no migration in this phase. |
 
 Projects list is the reference screen for this standard. Card/list switching, archives, server pagination, finance visibility and effective permissions remain business contracts. Page-specific layouts outside Projects list are not restructured. Legacy templates are reference material only; do not import their global styles or behaviours.
+
+### Remote client selection
+
+Project create/edit share one Client combobox through ClientSelector. It uses the same dimensions, bounded menu and modal/focus rules as other SearchableSelect consumers. Its placeholder is Search or select a client; No client is the explicit optional choice. The assigned label comes from authorized project data and survives lookup loading, errors and absent result rows. Typing or clearing search text never changes the selected client.
+
+SearchableSelect accepts optional onSearchChange and filterOptions=false for server-owned matching; local filtering remains the default. menuMessage supplies remote empty-result or limit notices, and searchPlaceholder/maxLength customize the editable search input. Remote callers own debounce, query scoping and request cancellation. ClientSelector distinguishes loading, no clients, no matching clients and request errors. Its lookup is capped at 50 results with a refine-search notice at the cap; it does not claim exhaustive browsing or offer unsupported pagination.

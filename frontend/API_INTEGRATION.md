@@ -241,3 +241,9 @@ The current frontend stores the opaque Sanctum bearer token in `sessionStorage`.
 ## S7 material requests and stock ledger
 
 Material request approval is non-posting. `POST /v1/material-requests/{id}/issue` posts positive `material_issued` quantities with direction `out`; `POST /v1/material-requests/{id}/return` posts `material_returned` with direction `in`. Both use UUID idempotency keys. `POST /v1/inventory-transfers` atomically posts a linked `transfer_out`/`transfer_in` pair. Do not retry a timed-out stock mutation with a new key; reload state or reuse the same key.
+
+### Client selector lookup limits
+
+The existing GET /clients/lookup endpoint accepts search (max 255 characters), selected_id and limit (1-50); it returns a bounded data array without pagination metadata or a page/cursor parameter. Search checks name and company_name across the tenant directory, not only assigned clients. selected_id without search restricts results to that selected ID; with search it adds that ID to matching candidates before the limit is applied.
+
+The single project Client combobox requests search plus limit=50, omits selected_id for directory results, and displays existing selection from authorized project data. The adapter accepts an optional AbortSignal without changing URL/payload conventions. A full 50-row response prompts search refinement. Exhaustive browsing and discovering every collision beyond the result cap are unsupported by the current API; no Load more action or invented pagination is implemented.
