@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { forwardRef } from "react";
+import { forwardRef, useId } from "react";
 import { AppIcon } from "./AppIcon";
 export const IconButton = ({
   icon,
@@ -15,11 +15,13 @@ export const ButtonGroup = ({ children }) => (
     {children}
   </div>
 );
-export const AppTextarea = forwardRef(({ label, error, ...props }, ref) => {
-  const id = props.id || props.name;
+export const AppTextarea = forwardRef(({ label, error, description, ...props }, ref) => {
+  const generatedId = useId();
+  const id = props.id || props.name || generatedId;
   return <label className="app-field" htmlFor={id}>
     <span>{label}</span>
-    <textarea ref={ref} id={id} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} {...props} />
+    <textarea {...props} ref={ref} id={id} aria-invalid={!!error} aria-describedby={[props["aria-describedby"], description && `${id}-description`, error && `${id}-error`].filter(Boolean).join(" ") || undefined} />
+    {description && <small id={`${id}-description`} className="field-description">{description}</small>}
     {error && <small id={`${id}-error`} role="alert">{error}</small>}
   </label>
 });
@@ -101,8 +103,8 @@ export function AppAlert({ tone = "info", children }) {
 export const PageContainer = ({ children }) => (
   <div className="page-container">{children}</div>
 );
-export const FilterBar = ({ children }) => (
-  <div className="filter-bar">{children}</div>
+export const FilterBar = ({ children, layout }) => (
+  <div className={`filter-bar ${layout === "grid" ? "filter-bar-grid" : ""}`}>{children}</div>
 );
 export const Breadcrumbs = ({ items }) => (
   <nav className="breadcrumbs" aria-label="Breadcrumb">

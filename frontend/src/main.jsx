@@ -1,9 +1,9 @@
 import { createRoot } from "react-dom/client";
 import "react-toastify/dist/ReactToastify.css";
 import App from "./App.jsx";
-import "./components/ui/app.css";
 import "./lib/theme/tokens.css";
 import "./lib/theme/themes.css";
+import "./components/ui/app.css";
 import { ThemeProvider } from "./lib/theme/ThemeProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 

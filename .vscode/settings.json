@@ -1,0 +1,6 @@
+{
+  "editor.formatOnSaveMode": "file",
+  "reactSnippets.settings.prettierEnabled": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "notebook.defaultFormatter": "esbenp.prettier-vscode"
+}

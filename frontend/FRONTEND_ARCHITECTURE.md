@@ -49,3 +49,11 @@ The company dashboard top section owns its heading, authorized project/period fi
 ## Verification boundary
 
 The maintained Vitest command covers authentication, route authorization, platform company editing and administrator setup, company dashboard behavior, company profile permissions and refresh, users/roles/departments presentation authorization, profile/password flows, settings persistence, permission selection, and shared modal/form accessibility. Laravel feature tests remain the authoritative verification for tenant isolation and mutation authorization.
+
+## Design Foundation — Phase 1: placement and Phase 1.1 review
+
+SearchableSelect.jsx in src/components/ui owns the controlled combobox, keyboard handling and portal; AppUI.jsx re-exports it. modalScope.js supplies the shared modal context and stack used by AppModal and SearchableSelect. The top AppModal owns focus containment and Escape; its selects portal within the dialog subtree. Page menus use the lower page-dropdown layer and are dismissed when a modal opens. FilterBar owns its optional responsive grid layout. Projects list composes these shared primitives without a feature-local control system or new library. Existing native AppSelect remains available. Form integrations use Controller when adopting the controlled combobox.
+
+index.html no longer loads legacy demo styles or Bootstrap; it retains Inter as an explicit font link. main.jsx imports tokens, theme definitions, then maintained component CSS. React Toastify retains its package stylesheet. Maintained CSS owns base box sizing, body typography, control inheritance and heading defaults. Archived components remain outside the runtime graph. Only Projects list gets page-specific composition changes in this phase. Visual rules belong in DESIGN_SYSTEM.md; preference logic is unchanged.
+
+Phase 1.1 changes shared dropdown/modal integration and overflow containment only; Projects list remains the reference screen. No Dashboard or Project Detail layout restructuring is included. Source, automated and browser evidence are recorded separately in [DESIGN_FOUNDATION_VERIFICATION.md](../docs/DESIGN_FOUNDATION_VERIFICATION.md).

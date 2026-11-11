@@ -7,6 +7,11 @@
   --color-text-muted: #64748b;
   --color-border: #e2e8f0;
   --color-input: #fff;
+  --color-accent-text: var(--color-primary);
+  --color-placeholder: #64748b;
+  --color-control-disabled: #475569;
+  --color-on-danger: #fff;
+  --color-danger-action: #b91c1c;
   --color-sidebar: #0f172a;
   --color-sidebar-text: #cbd5e1;
   --color-sidebar-muted: #94a3b8;
@@ -38,6 +43,11 @@
   --color-text-muted: #94a3b8;
   --color-border: #334155;
   --color-input: #172033;
+  --color-accent-text: #60a5fa;
+  --color-placeholder: #94a3b8;
+  --color-control-disabled: #cbd5e1;
+  --color-on-danger: #fff;
+  --color-danger-action: #b91c1c;
   --color-sidebar: #070d19;
   --color-sidebar-text: #cbd5e1;
   --color-sidebar-muted: #94a3b8;
@@ -80,3 +90,14 @@
   --color-primary-foreground: #fff;
   --color-accent-soft: #ffedd5;
 }
+
+:root {
+  --color-control-hover: color-mix(in srgb, var(--color-text-muted) 65%, var(--color-border));
+  --color-control-disabled-bg: var(--color-surface-muted);
+  --color-option-active: color-mix(in srgb, var(--color-primary) 14%, var(--color-surface));
+  --color-option-selected: color-mix(in srgb, var(--color-primary) 9%, var(--color-surface));
+}
+
+/* Accent text is independent of filled action backgrounds in dark mode. */
+[data-mode="dark"][data-accent="green"] { --color-accent-text: #4ade80; }
+[data-mode="dark"][data-accent="orange"] { --color-accent-text: #fb923c; }
