@@ -83,9 +83,9 @@ Projects searches its static statuses and complete authorized meta.project_manag
 
 | Component / selector | Intended retained style | Status |
 |---|---|---|
-| DashboardHeader / .dashboard-heading h1 | clamp(1.75rem, 2.3vw, 2rem), line-height 1.15 | Existing feature heading; migration to page-title tokens pending a separate review. No redesign in Phase 1.1. |
-| DashboardMetricCard / .dashboard-metric-copy strong | clamp(1.45rem, 1.8vw, 1.75rem), line-height 1.15; unavailable values 1.5rem | Intentional metric hierarchy, retained. No migration planned by this phase. |
-| DashboardMetricCard surface/icon | 16px padding, 12px radius, restrained shadow; 54px coloured icon | Intentional KPI treatment retained; rendered regression review pending. |
+| DashboardHeader / .dashboard-heading h1 | Shared page-title tokens: 28px desktop, 24px mobile, line-height 1.3 | Migrated to shared typography. Greeting uses muted 12px metadata; authorized project selection uses SearchableSelect over the existing complete loaded set. |
+| DashboardMetricCard / .dashboard-metric-copy strong | --text-xl (24px), line-height 1.15; unavailable values use the same size | Compact metric hierarchy; values and supporting text wrap without fixed heights. |
+| DashboardMetricCard surface/icon | 16px padding, 12px radius, restrained shadow; 54px coloured icon | Six semantic icon colours retained independently of accent. Available content width sets six/three/two/one columns; equal-height cards within each row. Rendered review pending. |
 | Auth marketing / .auth-brand h1 | clamp(34px, 5vw, 64px), 32px at <=800px | Marketing hierarchy retained; rem/token migration pending auth review. |
 | Auth form / .auth-panel h2 | 30px | Existing feature-specific rule; migration to shared hierarchy pending auth review. |
 | Workforce summary / .report-worker-summary dd | --text-xl (1.5rem), weight 700 | Intentional numeric summary retained; no migration in this phase. |

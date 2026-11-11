@@ -23,9 +23,11 @@ import { projectsApi } from "../api/projectsApi";
 import { useProjectMutation, useProjects } from "../hooks/useProjects";
 import { PROJECT_STATUSES } from "../schemas/projectSchema";
 import ProjectStatusBadge from "../components/ProjectStatusBadge";
+import { formatReportDate } from "../../daily-reports/utils/reportFormatters";
 
 const money = (value, currency) => {
   if (value === undefined || !currency) return "Restricted";
+  if (value === null || value === "") return "Unavailable";
   try {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
@@ -404,12 +406,8 @@ function ProjectCards({
               <dd>{project.project_manager?.name || "Unassigned"}</dd>
             </div>
             <div>
-              <dt>Progress</dt>
-              <dd>{project.progress_percentage}%</dd>
-            </div>
-            <div>
               <dt>Expected completion</dt>
-              <dd>{project.expected_end_date || "Not set"}</dd>
+              <dd>{project.expected_end_date ? formatReportDate(project.expected_end_date) : "Not set"}</dd>
             </div>
             <div>
               <dt>Estimated budget</dt>
@@ -420,6 +418,7 @@ function ProjectCards({
               <dd>{money(project.spent, project.currency)}</dd>
             </div>
           </dl>
+          <CardProgress project={project} />
           <footer>
             {archiveMode ? (
               can("projects.restore") && (
@@ -463,6 +462,30 @@ function ProjectCards({
           </footer>
         </article>
       ))}
+    </div>
+  );
+}
+
+function CardProgress({ project }) {
+  const raw = project.progress_percentage;
+  const value = typeof raw === "number" || (typeof raw === "string" && raw.trim() !== "")
+    ? Number(raw)
+    : NaN;
+  const available = Number.isFinite(value) && value >= 0 && value <= 100;
+
+  return (
+    <div className="project-card-progress">
+      <div className="project-card-progress-label">
+        <span>Progress</span>
+        <strong>{available ? `${value}%` : "Unavailable"}</strong>
+      </div>
+      {available && (
+        <progress
+          max="100"
+          value={value}
+          aria-label={`Progress for ${project.name}`}
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { AppInput, AppSelect } from "../../../components/ui/AppUI";
+import { AppInput, AppSelect, SearchableSelect } from "../../../components/ui/AppUI";
 
 export default function DashboardHeader({
   name,
@@ -32,21 +32,21 @@ export default function DashboardHeader({
         </p>
       </div>
       <div className="dashboard-filters" aria-label="Dashboard filters">
-        <AppSelect
+        <SearchableSelect
           label="Project"
           value={projectId}
-          disabled={
-            projects.isLoading || projects.isError || !projects.data?.length
-          }
-          onChange={(event) => onProjectChange(event.target.value)}
-        >
-          <option value="">{projectState}</option>
-          {(projects.data || []).map((project) => (
-            <option key={project.id} value={project.id}>
-              {project.name}
-            </option>
-          ))}
-        </AppSelect>
+          options={[
+            { value: "", label: projectState },
+            ...(projects.data || []).map((project) => ({
+              value: String(project.id),
+              label: project.name,
+            })),
+          ]}
+          loading={projects.isLoading}
+          requestError={projects.isError ? "Projects could not be loaded." : undefined}
+          disabled={projects.isLoading || projects.isError || !projects.data?.length}
+          onChange={onProjectChange}
+        />
         <AppSelect
           label="Period"
           value={period}
@@ -74,10 +74,10 @@ export default function DashboardHeader({
             />
           </div>
         )}
-        {/* <small className="dashboard-filter-scope">
-          Project applies to project metrics. Period applies to material
+        <small className="dashboard-filter-scope">
+          Project counts are current snapshots. Period applies to material
           consumption when a project is selected.
-        </small> */}
+        </small>
       </div>
     </header>
   );

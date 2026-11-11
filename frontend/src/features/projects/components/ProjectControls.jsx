@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { useState } from "react";
 import { toast } from "react-toastify";
-import { AppButton, AppInput, AppSelect } from "../../../components/ui/AppUI";
+import { AppButton, AppInput, SearchableSelect } from "../../../components/ui/AppUI";
 import { apiMessage } from "../../../api/endpoints";
 import { projectsApi } from "../api/projectsApi";
 import { STATUS_TRANSITIONS } from "../schemas/projectSchema";
@@ -25,19 +25,17 @@ export function ProjectStatusControl({ project }) {
   if (!options.length)
     return <p>No further status transitions are available.</p>;
   return (
-    <form className="inline-control" onSubmit={submit}>
-      <AppSelect
+    <form className="project-control-group" onSubmit={submit}>
+      <SearchableSelect
         label="Next status"
         value={value}
-        onChange={(e) => setValue(e.target.value)}
-      >
-        {options.map((x) => (
-          <option key={x} value={x}>
-            {x.replaceAll("_", " ")}
-          </option>
-        ))}
-      </AppSelect>
-      <AppButton busy={mutation.isPending}>Update status</AppButton>
+        onChange={setValue}
+        options={options.map((status) => ({
+          value: status,
+          label: status.replaceAll("_", " "),
+        }))}
+      />
+      <AppButton type="submit" busy={mutation.isPending}>Update status</AppButton>
     </form>
   );
 }
@@ -56,7 +54,7 @@ export function ProjectProgressControl({ project }) {
     }
   };
   return (
-    <form className="inline-control" onSubmit={submit}>
+    <form className="project-control-group" onSubmit={submit}>
       <AppInput
         label="Progress percentage"
         type="number"
@@ -66,7 +64,7 @@ export function ProjectProgressControl({ project }) {
         value={value}
         onChange={(e) => setValue(e.target.value)}
       />
-      <AppButton busy={mutation.isPending}>Update progress</AppButton>
+      <AppButton type="submit" busy={mutation.isPending}>Update progress</AppButton>
     </form>
   );
 }

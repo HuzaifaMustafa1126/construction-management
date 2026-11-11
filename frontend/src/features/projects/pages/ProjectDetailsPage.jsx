@@ -19,7 +19,6 @@ import { useProject } from "../hooks/useProjects";
 import { useDailyReports } from "../../daily-reports/hooks/useDailyReports";
 import ReportStatusBadge from "../../daily-reports/components/ReportStatusBadge";
 import {
-  excerpt,
   formatReportDate,
 } from "../../daily-reports/utils/reportFormatters";
 import { useSitePhotos } from "../../site-photos/hooks/useSitePhotos";
@@ -201,7 +200,7 @@ function ProjectDailyReports({ projectId, canCreate }) {
     <SectionCard
       title="Daily site reports"
       action={
-        <div className="button-group">
+        <div className="button-group project-report-header-actions">
           {canCreate && (
             <Link
               className="app-button primary"
@@ -226,23 +225,23 @@ function ProjectDailyReports({ projectId, canCreate }) {
       )}
       {reports.isLoading ? (
         <div role="status">Loading reports…</div>
-      ) : !reports.data?.data?.length ? (
+      ) : reports.error ? null : !reports.data?.data?.length ? (
         <p>No daily reports have been recorded for this project.</p>
       ) : (
         <div className="project-report-list">
           {reports.data.data.map((report) => (
             <article key={report.id}>
-              <div>
-                <strong>{report.title}</strong>
+              <div className="project-report-content">
+                <h3>{report.title}</h3>
                 <small>
                   {formatReportDate(report.report_date)} ·{" "}
                   {report.creator?.name || "—"}
                 </small>
-                <p>{excerpt(report.work_completed, 120)}</p>
+                <p>{report.work_completed || "—"}</p>
               </div>
-              <div>
+              <div className="project-report-actions">
                 <ReportStatusBadge status={report.status} />
-                <Link to={`/daily-reports/${report.id}?project=${projectId}`}>
+                <Link className="app-button secondary" to={`/daily-reports/${report.id}?project=${projectId}`}>
                   View report
                 </Link>
               </div>
@@ -265,7 +264,7 @@ function ProjectSitePhotos({ projectId, canUpload }) {
     <SectionCard
       title="Recent site photos"
       action={
-        <div className="button-group">
+        <div className="button-group project-photo-header-actions">
           {canUpload && (
             <Link
               className="app-button primary"
@@ -285,17 +284,17 @@ function ProjectSitePhotos({ projectId, canUpload }) {
     >
       {photos.error && (
         <AppAlert tone="danger">
-          {apiMessage(photos.error, "Site photos could not be loaded.")}
+          {apiMessage(photos.error, photos.error?.status === 403 ? "You do not have access to these site photos." : "Site photos could not be loaded.")}
         </AppAlert>
       )}
       {photos.isLoading ? (
         <div role="status">Loading photos…</div>
-      ) : !photos.data?.data?.length ? (
+      ) : photos.error ? null : !photos.data?.data?.length ? (
         <p>No site photos have been uploaded for this project.</p>
       ) : (
-        <div className="photo-gallery compact">
+        <div className="project-photo-preview">
           {photos.data.data.map((photo) => (
-            <SitePhotoCard key={photo.id} photo={photo} projectId={projectId} />
+            <SitePhotoCard preview key={photo.id} photo={photo} projectId={projectId} />
           ))}
         </div>
       )}
