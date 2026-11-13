@@ -1800,12 +1800,15 @@ h6 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
 }
+.dashboard-metrics {
+  container: dashboard-metrics / inline-size;
+  min-width: 0;
+  margin-bottom: var(--space-6);
+}
 .dashboard-metric-grid {
   display: grid;
-  container-type: inline-size;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: var(--space-3);
-  margin-bottom: var(--space-6);
 }
 .dashboard-metric-card {
   display: flex;
@@ -1816,7 +1819,7 @@ h6 {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-section);
 }
 .dashboard-metric-icon {
   display: grid;
@@ -1851,8 +1854,9 @@ h6 {
 }
 .dashboard-metric-label {
   color: var(--color-text-muted);
-  font-size: var(--text-xs);
+  font-size: var(--text-label);
   font-weight: var(--weight-medium);
+  line-height: var(--line-body);
 }
 .dashboard-metric-copy strong {
   overflow-wrap: anywhere;
@@ -1867,8 +1871,8 @@ h6 {
 }
 .dashboard-metric-copy small {
   color: var(--color-text-muted);
-  font-size: var(--text-xs);
-  line-height: 1.4;
+  font-size: var(--text-helper);
+  line-height: var(--line-body);
 }
 .dashboard-metric-skeleton {
   width: min(128px, 85%);
@@ -1879,19 +1883,19 @@ h6 {
   animation: app-pulse 1.2s infinite;
 }
 
-@container (max-width: 90rem) {
-  .dashboard-metric-card {
-    grid-column: span 2;
+@container dashboard-metrics (max-width: 90rem) {
+  .dashboard-metric-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
-@container (max-width: 54rem) {
-  .dashboard-metric-card {
-    grid-column: span 3;
+@container dashboard-metrics (max-width: 54rem) {
+  .dashboard-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-@container (max-width: 34rem) {
-  .dashboard-metric-card {
-    grid-column: 1 / -1;
+@container dashboard-metrics (max-width: 34rem) {
+  .dashboard-metric-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 @media (max-width: 640px) {

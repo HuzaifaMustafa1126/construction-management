@@ -7,3 +7,13 @@ export function useSitePhotos(projectId, params, enabled = true) { const keys = 
 export function useSitePhoto(projectId, photoId) { const keys = useSitePhotoKeys(); return useQuery({ queryKey: keys.detail(projectId, photoId), queryFn: () => sitePhotosApi.get(projectId, photoId), enabled: !!projectId && !!photoId, retry: false }); }
 export function useReportPhotos(projectId, reportId, enabled = true) { const keys = useSitePhotoKeys(); return useQuery({ queryKey: keys.report(projectId, reportId), queryFn: () => sitePhotosApi.reportPhotos(projectId, reportId), enabled: !!projectId && !!reportId && enabled, retry: false }); }
 export function useSitePhotoMutation(action) { const client = useQueryClient(); const keys = useSitePhotoKeys(); return useMutation({ mutationFn: action, onSuccess: (result) => { client.invalidateQueries({ queryKey: keys.root }); client.invalidateQueries({ queryKey: ["projects"] }); client.invalidateQueries({ queryKey: ["daily-reports"] }); client.invalidateQueries({ queryKey: ["dashboard"] }); const photo = Array.isArray(result) ? null : result; if (photo?.id && photo?.project_id) client.setQueryData(keys.detail(photo.project_id, photo.id), photo); } }); }
+
+export function useSitePhotoCollection(params, enabled = true) {
+  const keys = useSitePhotoKeys();
+  return useQuery({
+    queryKey: [...keys.root, "collection", params],
+    queryFn: ({ signal }) => sitePhotosApi.collection(params, signal),
+    enabled,
+    retry: false,
+  });
+}

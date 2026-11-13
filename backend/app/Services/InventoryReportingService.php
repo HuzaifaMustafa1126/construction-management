@@ -21,7 +21,7 @@ class InventoryReportingService
         return $query->pluck('id');
     }
 
-    public function stockQuery(int $companyId, array $projectIds, array $filters)
+    public function stockQuery(int $companyId, array|Builder $projectIds, array $filters)
     {
         $start = $filters['start_date'] ?? null;
         $end = $filters['end_date'] ?? null;

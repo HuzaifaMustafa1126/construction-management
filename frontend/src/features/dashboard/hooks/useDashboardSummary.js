@@ -26,7 +26,8 @@ const countMetric = (query) => {
   return { state: "ready", value: query.data?.meta?.total ?? 0 };
 };
 
-const consumptionMetric = (query, disabledMessage) => {
+const consumptionMetric = (query, disabledMessage, allTime) => {
+  const scope = allTime ? "across all time" : "in this period";
   if (!query.isEnabled) {
     return {
       state: "unavailable",
@@ -41,7 +42,7 @@ const consumptionMetric = (query, disabledMessage) => {
     return {
       state: "ready",
       value: "0",
-      support: "No posted consumption in this period",
+      support: `No posted consumption ${scope}`,
     };
   }
 
@@ -55,7 +56,7 @@ const consumptionMetric = (query, disabledMessage) => {
     return {
       state: "ready",
       value: "Mixed units",
-      support: `${byUnit.size} measurement units in this period`,
+      support: `${byUnit.size} measurement units ${scope}`,
     };
   }
 
@@ -63,11 +64,11 @@ const consumptionMetric = (query, disabledMessage) => {
   return {
     state: "ready",
     value: `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 }).format(quantity)} ${symbol}`,
-    support: "Posted consumption in this period",
+    support: `Posted consumption ${scope}`,
   };
 };
 
-export function useDashboardSummary({ projectId, dateFrom, dateTo }) {
+export function useDashboardSummary({ projectId, dateFrom, dateTo, allTime = false }) {
   const { user, can } = useAuth();
   const { company } = useCompany();
   const companyId = company?.id || user?.company?.id;
@@ -104,32 +105,35 @@ export function useDashboardSummary({ projectId, dateFrom, dateTo }) {
       ...identity,
       "material-consumption",
       String(projectId || "none"),
-      dateFrom,
-      dateTo,
+      allTime ? "all" : dateFrom,
+      allTime ? "all" : dateTo,
     ],
     queryFn: () =>
-      consumptionsApi.summary(projectId, {
+      consumptionsApi.summary(projectId, allTime ? {} : {
         date_from: dateFrom,
         date_to: dateTo,
       }),
     enabled:
       !!companyId &&
       !!projectId &&
-      !!dateFrom &&
-      !!dateTo &&
+      (allTime || (!!dateFrom && !!dateTo)) &&
       canViewConsumption,
     retry: false,
   });
 
   const totalValue = projectId
-    ? projects.isLoading
+    ? projects.isError
+      ? { state: "error" }
+      : projects.isLoading
       ? { state: "loading" }
       : selectedProject
         ? { state: "ready", value: 1 }
         : { state: "error" }
     : countMetric(totalProjects);
   const activeValue = projectId
-    ? projects.isLoading
+    ? projects.isError
+      ? { state: "error" }
+      : projects.isLoading
       ? { state: "loading" }
       : selectedProject
         ? { state: "ready", value: selectedProject.status === "active" ? 1 : 0 }
@@ -150,11 +154,12 @@ export function useDashboardSummary({ projectId, dateFrom, dateTo }) {
     consumptionValue: consumptionMetric(
       {
         ...consumption,
-        isEnabled: !!projectId && canViewConsumption && !!dateFrom && !!dateTo,
+        isEnabled: !!projectId && canViewConsumption && (allTime || (!!dateFrom && !!dateTo)),
       },
       projectId
         ? "Choose a valid period"
         : "Select a project to view consumption",
+      allTime,
     ),
   };
 }

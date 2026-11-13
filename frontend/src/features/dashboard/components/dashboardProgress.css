@@ -1,0 +1,131 @@
+﻿.dashboard-progress {
+  min-width: 0;
+}
+.dashboard-progress-link {
+  color: var(--color-accent-text);
+  font-size: var(--text-helper);
+  font-weight: var(--weight-semibold);
+}
+.dashboard-progress-scope {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-helper);
+}
+.dashboard-progress-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: var(--space-2) var(--space-1);
+}
+.dashboard-progress-chart {
+  min-width: calc(3rem + var(--project-count) * 6.5rem);
+  height: 300px;
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  padding-top: var(--space-8);
+  padding-bottom: 3rem;
+  font-size: var(--text-helper);
+}
+.dashboard-progress-axis,
+.dashboard-progress-plot {
+  position: relative;
+  min-width: 0;
+}
+.dashboard-progress-axis > span {
+  position: absolute;
+  right: var(--space-2);
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+}
+.dashboard-progress-plot {
+  display: flex;
+}
+.dashboard-progress-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.dashboard-progress-grid > span {
+  position: absolute;
+  width: 100%;
+  border-top: 1px dashed var(--color-border);
+}
+.dashboard-progress-column {
+  position: relative;
+  min-width: 0;
+  flex: 1;
+  padding-inline: var(--space-3);
+}
+.dashboard-progress-target {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+.dashboard-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(48px, 60%);
+  height: var(--progress);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: var(--color-primary);
+}
+.dashboard-progress-value {
+  position: absolute;
+  bottom: var(--progress);
+  left: 50%;
+  transform: translate(-50%, -4px);
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+.dashboard-progress-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  margin-top: var(--space-3);
+  text-align: center;
+  color: var(--color-text-muted);
+  line-height: var(--line-body);
+}
+.dashboard-progress-tooltip {
+  display: none;
+  position: absolute;
+  z-index: 1;
+  bottom: var(--space-3);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(15rem, 100%);
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-popover);
+  overflow-wrap: anywhere;
+}
+.dashboard-progress-target:hover .dashboard-progress-tooltip,
+.dashboard-progress-target:focus .dashboard-progress-tooltip {
+  display: block;
+}
+.dashboard-progress-data {
+  margin-top: var(--space-3);
+  font-size: var(--text-helper);
+  overflow-wrap: anywhere;
+}
+.dashboard-progress-data summary {
+  cursor: pointer;
+  color: var(--color-accent-text);
+}
+.dashboard-progress-data li + li {
+  margin-top: var(--space-2);
+}
+@media (max-width: 640px) {
+  .dashboard-progress-chart {
+    height: 280px;
+  }
+}
+/* The chart is static, including when reduced motion is requested. */

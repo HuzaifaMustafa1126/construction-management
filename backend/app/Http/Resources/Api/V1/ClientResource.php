@@ -19,6 +19,13 @@ class ClientResource extends JsonResource
             'city' => $this->city,
             'country' => $this->country,
             'notes' => $this->notes,
+            'has_login_account' => array_key_exists('user_id', $this->resource->getAttributes()) ? $this->user_id !== null : null,
+            'account' => $this->when($request->user()?->can('users.view') && $this->resource->relationLoaded('user'), function () {
+                $user = $this->resource->getRelation('user');
+
+                return $user ? ['id' => $user->id, 'email' => $user->email, 'status' => $user->status,
+                    'deleted' => $user->trashed()] : null;
+            }),
             'projects_count' => $this->whenCounted('projects'),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

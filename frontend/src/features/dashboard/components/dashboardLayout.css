@@ -1,0 +1,66 @@
+﻿/* Dashboard composition only; shared card/control tokens remain authoritative. */
+.company-dashboard {
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+.company-dashboard > * {
+  min-width: 0;
+}
+.company-dashboard > .dashboard-heading,
+.company-dashboard > .dashboard-metrics,
+.company-dashboard > .dashboard-chart-layout,
+.company-dashboard > .dashboard-site-widget-layout,
+.company-dashboard > .section-card {
+  margin-bottom: 0;
+}
+.company-dashboard .dashboard-chart-row {
+  gap: var(--space-4);
+}
+.company-dashboard .section-card > header {
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.company-dashboard .section-card > header > a {
+  margin-left: auto;
+  overflow-wrap: anywhere;
+}
+.company-dashboard :is(
+  .dashboard-progress-scope,
+  .dashboard-photos-scope,
+  .dashboard-reports-scope,
+  .dashboard-stock-scope,
+  .dashboard-active-scope
+) {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-helper);
+  line-height: var(--line-body);
+  overflow-wrap: anywhere;
+}
+.company-dashboard :is(
+  .dashboard-report-pagination,
+  .dashboard-stock-pagination,
+  .dashboard-active-pagination
+) {
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  margin-top: var(--space-3);
+  overflow-wrap: anywhere;
+}
+/* Preserve bottom alignment in the equal-height Photos/Reports pair. */
+.company-dashboard .dashboard-site-widget-row .dashboard-report-pagination {
+  margin-top: auto;
+}
+.company-dashboard .dashboard-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.company-dashboard .dashboard-quick-actions > .app-button {
+  flex: 0 1 auto;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

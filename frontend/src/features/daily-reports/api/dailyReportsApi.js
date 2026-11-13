@@ -4,6 +4,7 @@ const base = (projectId) => `/v1/projects/${projectId}/daily-reports`;
 const unwrap = (response) => response?.data?.data ?? response?.data;
 
 export const dailyReportsApi = {
+  collection: (params, signal) => api.get("/v1/daily-reports", { params, signal }).then((r) => r.data),
   list: (projectId, params) => api.get(base(projectId), { params }).then((r) => r.data),
   get: (projectId, reportId) => api.get(`${base(projectId)}/${reportId}`).then(unwrap),
   create: (projectId, payload) => api.post(base(projectId), payload).then(unwrap),

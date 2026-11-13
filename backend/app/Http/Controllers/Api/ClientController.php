@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\ClientLookupRequest;
 use App\Http\Requests\Api\V1\ListClientsRequest;
+use App\Http\Requests\Api\V1\StoreClientLoginAccountRequest;
 use App\Http\Requests\Api\V1\StoreClientRequest;
 use App\Http\Requests\Api\V1\UpdateClientRequest;
 use App\Http\Resources\Api\V1\ClientResource;
@@ -13,6 +14,7 @@ use App\Services\ClientService;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class ClientController extends Controller
 {
@@ -26,6 +28,7 @@ class ClientController extends Controller
 
         $validated = $request->validated();
         $query = Client::query()->forCompany($tenant->companyId())->withCount('projects');
+        $this->withAccount($query, $request, $tenant->companyId());
         if ($search = $validated['search'] ?? null) {
             $query->where(function ($builder) use ($search): void {
                 $builder->where('name', 'like', "%{$search}%")
@@ -80,7 +83,7 @@ class ClientController extends Controller
         }
         $client = $this->clients->create($request->validated(), $tenant->companyId(), $request->user());
 
-        return response()->json(['data' => new ClientResource($client), 'message' => 'Client created successfully.'], 201);
+        return response()->json(['data' => new ClientResource($this->loadClient($client, $request, $tenant->companyId())), 'message' => 'Client and login account created successfully.'], 201);
     }
 
     public function show(Request $request, TenantContext $tenant, int $id): JsonResponse
@@ -93,7 +96,7 @@ class ClientController extends Controller
             return $this->forbidden();
         }
 
-        return response()->json(['data' => new ClientResource($client->loadCount('projects'))]);
+        return response()->json(['data' => new ClientResource($this->loadClient($client, $request, $tenant->companyId()))]);
     }
 
     public function update(UpdateClientRequest $request, TenantContext $tenant, int $id): JsonResponse
@@ -128,6 +131,44 @@ class ClientController extends Controller
         $this->clients->delete($client, $request->user());
 
         return response()->json(['message' => 'Client deleted successfully.']);
+    }
+
+    public function accountOptions(Request $request, TenantContext $tenant): JsonResponse
+    {
+        abort_unless($request->user()->canAny(['clients.view', 'clients.create', 'clients.update']), 403);
+
+        return response()->json(['data' => $this->clients->accountOptions($request->user(), $tenant->companyId())]);
+    }
+
+    public function createLoginAccount(StoreClientLoginAccountRequest $request, TenantContext $tenant, int $id): JsonResponse
+    {
+        $client = $this->find($tenant, $id);
+        if (! $client) {
+            return $this->notFound();
+        }
+        abort_unless($request->user()->can('update', $client), 403);
+        $client = $this->clients->createLoginAccount($client, $request->validated(), $tenant->companyId(), $request->user());
+
+        return response()->json(['data' => new ClientResource($this->loadClient($client, $request, $tenant->companyId())),
+            'message' => 'Client login account created successfully.'], 201);
+    }
+
+    private function withAccount($query, Request $request, int $companyId): void
+    {
+        if ($request->user()->can('users.view') && Schema::hasColumn('clients', 'user_id')) {
+            $query->with(['user' => fn ($users) => $users->withTrashed()->where('company_id', $companyId)
+                ->select(['id', 'email', 'status', 'deleted_at'])]);
+        }
+    }
+
+    private function loadClient(Client $client, Request $request, int $companyId): Client
+    {
+        if ($request->user()->can('users.view') && Schema::hasColumn('clients', 'user_id')) {
+            $client->load(['user' => fn ($users) => $users->withTrashed()->where('company_id', $companyId)
+                ->select(['id', 'email', 'status', 'deleted_at'])]);
+        }
+
+        return $client->loadCount('projects');
     }
 
     private function find(TenantContext $tenant, int $id): ?Client

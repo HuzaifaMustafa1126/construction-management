@@ -1,0 +1,89 @@
+﻿.create-daily-report-page {
+  container: create-daily-report / inline-size;
+  width: 100%;
+  max-width: 75rem;
+  min-width: 0;
+  margin-inline: auto;
+  display: grid;
+  gap: var(--space-5);
+}
+.create-daily-report-page > .page-header {
+  margin-bottom: 0;
+}
+.daily-report-sectioned-form {
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+.daily-report-sectioned-form > .section-card {
+  min-width: 0;
+  margin-bottom: 0;
+}
+.daily-report-sectioned-form .section-card > header {
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.daily-report-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--space-4);
+}
+.daily-report-sectioned-form .app-field,
+.daily-report-span {
+  min-width: 0;
+}
+.daily-report-span {
+  grid-column: 1 / -1;
+}
+.daily-report-sectioned-form .daily-report-textareas textarea {
+  min-height: calc(var(--space-8) * 4);
+  resize: vertical;
+}
+.daily-report-workers-help,
+.daily-report-workers-empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-helper);
+  overflow-wrap: anywhere;
+}
+.daily-report-workers-help {
+  margin-bottom: var(--space-4);
+}
+.daily-report-workers-error {
+  color: var(--color-danger);
+  font-size: var(--text-helper);
+}
+.daily-report-worker-list {
+  display: grid;
+  gap: var(--space-3);
+}
+.daily-report-workforce-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 10rem) auto;
+  align-items: end;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  min-width: 0;
+}
+.daily-report-workforce-row > .app-button {
+  align-self: end;
+}
+.daily-report-create-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-3);
+}
+@container create-daily-report (max-width: 40rem) {
+  .daily-report-fields,
+  .daily-report-workforce-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .daily-report-create-actions > .app-button {
+    flex: 1 1 100%;
+  }
+}

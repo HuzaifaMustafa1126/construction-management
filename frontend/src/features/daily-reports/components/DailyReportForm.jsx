@@ -7,12 +7,17 @@ import { AppAlert, AppTextarea } from "../../../components/ui/Controls";
 import { applyServerErrors } from "../../../api/endpoints";
 import { dailyReportSchema, reportPayload } from "../schemas/dailyReportSchema";
 import WorkersPresentField from "./WorkersPresentField";
+import DailyReportCreateSections from "./DailyReportCreateSections";
 
 const defaults = { project_id: "", report_date: "", title: "", work_completed: "", work_in_progress: "", issues: "", delays: "", delay_reason: "", weather_conditions: "", general_notes: "", progress_percentage: "", workers: [] };
-export default function DailyReportForm({ initialValues, projects, fixedProjectId, submitLabel = "Save Report", onSubmit, onCancel }) {
+export default function DailyReportForm({ initialValues, projects, fixedProjectId, submitLabel = "Save Report", onSubmit, onCancel, sectioned = false }) {
   const form = useForm({ resolver: zodResolver(dailyReportSchema), defaultValues: { ...defaults, ...initialValues, project_id: String(fixedProjectId || initialValues?.project?.id || initialValues?.project_id || ""), progress_percentage: initialValues?.progress_percentage ?? "", workers: initialValues?.workers || [] } });
   useEffect(() => { if (fixedProjectId) form.setValue("project_id", String(fixedProjectId)); }, [fixedProjectId, form]);
   const submit = form.handleSubmit(async (values) => { try { await onSubmit(values.project_id, reportPayload(values)); } catch (error) { applyServerErrors(error, form.setError); form.setError("root", { message: error.message || "The report could not be saved." }); } });
+  if (sectioned) return <form className="daily-report-sectioned-form" onSubmit={submit} noValidate>
+    {form.formState.errors.root && <AppAlert tone="danger">{form.formState.errors.root.message}</AppAlert>}
+    <DailyReportCreateSections form={form} fixedProjectId={fixedProjectId} submitLabel={submitLabel} onCancel={onCancel} />
+  </form>;
   return <form className="app-form project-form" onSubmit={submit} noValidate>
     {form.formState.errors.root && <div className="full"><AppAlert tone="danger">{form.formState.errors.root.message}</AppAlert></div>}
     {fixedProjectId ? <><AppSelect label="Project" value={String(fixedProjectId)} disabled><option value={fixedProjectId}>{projects.find((p) => String(p.id) === String(fixedProjectId))?.name || initialValues?.project?.name || "Selected project"}</option></AppSelect><input type="hidden" {...form.register("project_id")}/></> : <AppSelect label="Project" required {...form.register("project_id")} error={form.formState.errors.project_id?.message}><option value="">Select a project</option>{projects.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.code})</option>)}</AppSelect>}

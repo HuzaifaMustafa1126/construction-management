@@ -1,14 +1,20 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { PageHeader, SectionCard } from "../../../components/ui/AppUI";
+import { AppButton, AppBadge, PageHeader, SectionCard } from "../../../components/ui/AppUI";
 import { AppAlert, StatCard } from "../../../components/ui/Controls";
 import { apiMessage } from "../../../api/endpoints";
 import { useAuth } from "../../auth/context/AuthContext";
-import { useClient } from "../hooks/useClients";
+import { useClient, useClientAccountOptions } from "../hooks/useClients";
+
+import ClientLoginAccountDialog from "../components/ClientLoginAccountDialog";
+import "./clients.css";
 
 export default function ClientDetailsPage() {
   const { id } = useParams();
   const { can } = useAuth();
   const query = useClient(id);
+  const options = useClientAccountOptions();
+  const [linking, setLinking] = useState(false);
   if (query.isLoading) return <div role="status">Loading client…</div>;
   if (query.error)
     return (
@@ -18,7 +24,7 @@ export default function ClientDetailsPage() {
     );
   const client = query.data;
   return (
-    <div className="phase2-page">
+    <div className="phase2-page clients-workspace">
       <PageHeader
         title={client.name}
         description={client.company_name || "Client record"}
@@ -40,6 +46,15 @@ export default function ClientDetailsPage() {
         <StatCard label="Email" value={client.email || "Not set"} />
         <StatCard label="Phone" value={client.phone || "Not set"} />
       </div>
+      <SectionCard title="Login account">
+        <AppBadge>{client.has_login_account == null ? "Link status unavailable" : client.has_login_account ? "Linked account" : "No login account"}</AppBadge>
+        {can("users.view") && client.account && <p>{client.account.email} | {client.account.deleted ? "Deleted account" : client.account.status}</p>}
+        <p className="field-description">Contact email changes do not change login email. Manage account changes in Users. Project membership remains separate.</p>
+        {can("clients.update") && can("users.create") && can("roles.assign") && options.data?.reason && <AppAlert tone="warning">{options.data.reason}</AppAlert>}
+        {client.has_login_account !== true && can("clients.update") && can("users.create") && can("roles.assign") && <AppButton disabled={!options.data?.can_link} onClick={() => setLinking(true)}>Create login account</AppButton>}
+        {client.has_login_account && can("users.view") && <Link className="app-button secondary" to="/users">Manage in Users</Link>}
+      </SectionCard>
+      {linking && <ClientLoginAccountDialog client={client} onClose={() => setLinking(false)} />}
       <SectionCard title="Client details">
         <dl className="project-overview">
           <div>

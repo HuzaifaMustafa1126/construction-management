@@ -3,21 +3,23 @@ import { useAuth } from "../../auth/context/AuthContext";
 import { clientsApi } from "../api/clientsApi";
 
 export function useClientKeys() {
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const root = ["clients", user?.company?.id, user?.id];
   return {
     root,
-    list: (params) => [...root, "list", params],
-    detail: (id) => [...root, "detail", String(id)],
+    list: (params) => [...root, "list", can("users.view"), params],
+    detail: (id) => [...root, "detail", String(id), can("users.view")],
     lookup: (params) => [...root, "lookup", params],
   };
 }
 
 export function useClients(params) {
   const keys = useClientKeys();
+  const { can } = useAuth();
   return useQuery({
     queryKey: keys.list(params),
-    queryFn: () => clientsApi.list(params),
+    queryFn: ({ signal }) => clientsApi.list(params, { signal }),
+    enabled: can("clients.view"),
   });
 }
 
@@ -43,12 +45,24 @@ export function useClientLookup(params, enabled = true) {
 export function useClientMutation(action) {
   const queryClient = useQueryClient();
   const keys = useClientKeys();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: action,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.root });
+      queryClient.invalidateQueries({ queryKey: ["company", user?.company?.id, "users"] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
+}
+
+export function useClientDirectory(params) {
+  const { can, user } = useAuth();
+  return useQuery({ queryKey: ["company", user?.company?.id, "users", "client-directory", user?.id, can("users.view"), params], queryFn: ({ signal }) => clientsApi.directory(params, { signal }), enabled: can("clients.view") });
+}
+export function useClientAccountOptions() {
+  const keys = useClientKeys();
+  const { can } = useAuth();
+  return useQuery({ queryKey: [...keys.root, "account-options"], queryFn: ({ signal }) => clientsApi.accountOptions({ signal }), enabled: ["clients.view", "clients.create", "clients.update"].some((permission) => can(permission)) });
 }

@@ -1,0 +1,164 @@
+.dashboard-site-widget-layout {
+  container: dashboard-site-widgets / inline-size;
+  min-width: 0;
+  margin-bottom: var(--space-5);
+}
+.dashboard-site-widget-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+}
+.dashboard-site-widget-row > .section-card {
+  container: dashboard-site-card / inline-size;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-bottom: 0;
+}
+.dashboard-site-widget-row > .section-card > header {
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.dashboard-site-widget-row > .section-card > header > a {
+  margin-left: auto;
+}
+@container dashboard-site-widgets (min-width: 56rem) {
+  .dashboard-site-widget-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+  .dashboard-site-widget-row > :only-child {
+    grid-column: 1 / -1;
+  }
+}
+.dashboard-reports-link {
+  color: var(--color-accent-text);
+  font-size: var(--text-helper);
+  font-weight: var(--weight-semibold);
+}
+.dashboard-reports-message {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+.dashboard-reports-scope {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-helper);
+}
+.dashboard-report-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.dashboard-report-list > li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: start;
+  gap: var(--space-3);
+  padding-block: var(--space-3);
+}
+.dashboard-report-list > li + li {
+  border-top: 1px solid var(--color-border);
+}
+.dashboard-report-icon {
+  display: grid;
+  place-items: center;
+  padding: var(--space-2);
+  border-radius: var(--radius-control);
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+.dashboard-report-icon[data-status="approved"] {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+.dashboard-report-icon[data-status="changes_required"] {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+.dashboard-report-icon[data-status="draft"] {
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+}
+.dashboard-report-copy {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-1);
+  overflow-wrap: anywhere;
+}
+.dashboard-report-title {
+  color: var(--color-text);
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+.dashboard-report-title:hover {
+  color: var(--color-accent-text);
+  text-decoration: underline;
+}
+.dashboard-report-copy > span,
+.dashboard-report-date {
+  color: var(--color-text-muted);
+  font-size: var(--text-helper);
+}
+.dashboard-report-copy > .dashboard-report-project {
+  color: var(--color-text);
+  font-weight: var(--weight-medium);
+}
+.dashboard-report-date {
+  max-width: 6rem;
+  line-height: var(--line-body);
+}
+.dashboard-report-summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-helper);
+  line-height: var(--line-body);
+}
+.dashboard-report-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  margin-top: auto;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--text-helper);
+}
+@container dashboard-site-card (max-width: 30rem) {
+  .dashboard-report-list > li {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .dashboard-report-copy {
+    grid-row: span 2;
+  }
+  .dashboard-report-date {
+    grid-column: 3;
+  }
+  .dashboard-report-list > li > .app-badge {
+    grid-column: 3;
+    justify-self: start;
+  }
+}
+@container dashboard-site-card (max-width: 22rem) {
+  .dashboard-report-list > li {
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: var(--space-2);
+  }
+  .dashboard-report-copy {
+    grid-row: auto;
+  }
+  .dashboard-report-date,
+  .dashboard-report-list > li > .app-badge {
+    grid-column: 2;
+  }
+  .dashboard-report-summary {
+    white-space: normal;
+  }
+}

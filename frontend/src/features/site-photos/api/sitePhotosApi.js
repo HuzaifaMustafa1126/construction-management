@@ -3,6 +3,7 @@ import api from "../../../api/axiosClient";
 const base = (projectId) => `/v1/projects/${projectId}/photos`;
 const unwrap = (response) => response?.data?.data ?? response?.data;
 export const sitePhotosApi = {
+  collection: (params, signal) => api.get("/v1/site-photos", { params, signal }).then((r) => r.data),
   list: (projectId, params) => api.get(base(projectId), { params }).then((r) => r.data),
   get: (projectId, photoId) => api.get(`${base(projectId)}/${photoId}`).then(unwrap),
   file: (projectId, photoId, signal) => api.get(`${base(projectId)}/${photoId}/file`, { responseType: "blob", signal }).then((r) => r.data),

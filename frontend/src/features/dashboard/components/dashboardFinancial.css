@@ -1,0 +1,34 @@
+﻿.dashboard-chart-layout {
+  container: dashboard-charts / inline-size;
+  min-width: 0;
+  margin-bottom: var(--space-5);
+}
+.dashboard-chart-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-5);
+}
+.dashboard-chart-row > .section-card {
+  min-width: 0;
+  margin-bottom: 0;
+}
+.dashboard-financial-unavailable {
+  margin: 0;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+.dashboard-financial-scope {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-helper);
+  overflow-wrap: anywhere;
+}
+@container dashboard-charts (min-width: 64rem) {
+  .dashboard-chart-row {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+  .dashboard-chart-row > :only-child {
+    grid-column: 1 / -1;
+  }
+}

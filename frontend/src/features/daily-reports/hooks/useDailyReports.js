@@ -28,3 +28,13 @@ export function useDailyReportMutation(action) {
     if (report?.id && report?.project?.id) client.setQueryData(keys.detail(report.project.id, report.id), report);
   } });
 }
+
+export function useDailyReportCollection(params, enabled = true) {
+  const keys = useDailyReportKeys();
+  return useQuery({
+    queryKey: [...keys.root, "collection", params],
+    queryFn: ({ signal }) => dailyReportsApi.collection(params, signal),
+    enabled,
+    retry: false,
+  });
+}

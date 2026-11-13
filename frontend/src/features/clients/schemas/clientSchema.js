@@ -26,3 +26,13 @@ export function clientPayload(values) {
     ]),
   );
 }
+
+const loginFields = {
+  email: z.string().trim().email("Enter a valid email address.").max(255),
+  password: z.string().min(8, "Use at least 8 characters."),
+  password_confirmation: z.string().min(1, "Confirm the password."),
+};
+const passwordsMatch = (values) => values.password === values.password_confirmation;
+const confirmationError = { path: ["password_confirmation"], message: "Passwords do not match." };
+export const createClientSchema = clientSchema.extend(loginFields).refine(passwordsMatch, confirmationError);
+export const clientLoginSchema = z.object({ name: z.string().trim().min(1, "Name is required.").max(200), ...loginFields }).refine(passwordsMatch, confirmationError);

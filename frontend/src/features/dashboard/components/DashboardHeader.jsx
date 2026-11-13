@@ -52,6 +52,7 @@ export default function DashboardHeader({
           value={period}
           onChange={(event) => onPeriodChange(event.target.value)}
         >
+          <option value="all">All time</option>
           <option value="month">This month</option>
           <option value="custom">Custom period</option>
         </AppSelect>
@@ -75,8 +76,8 @@ export default function DashboardHeader({
           </div>
         )}
         <small className="dashboard-filter-scope">
-          Project counts are current snapshots. Period applies to material
-          consumption when a project is selected.
+          Project counts are current snapshots. Period applies to site photos, site reports
+          and to material consumption when a project is selected.
         </small>
       </div>
     </header>

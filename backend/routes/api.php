@@ -3,11 +3,15 @@
 use App\Http\Controllers\Api\AcceptStaffInvitationController;
 use App\Http\Controllers\Api\AdministratorPasswordController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ClientAccountController;
 use App\Http\Controllers\Api\ClientController;
+use App\Http\Controllers\Api\ClientDirectoryController;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\CompanyRegistrationController;
+use App\Http\Controllers\Api\DailySiteReportCollectionController;
 use App\Http\Controllers\Api\DailySiteReportController;
 use App\Http\Controllers\Api\DepartmentController;
+use App\Http\Controllers\Api\InventoryCollectionController;
 use App\Http\Controllers\Api\InventoryReportController;
 use App\Http\Controllers\Api\InventoryTransferController;
 use App\Http\Controllers\Api\MaterialCategoryController;
@@ -25,6 +29,7 @@ use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\ProjectInventoryController;
 use App\Http\Controllers\Api\ProjectTeamController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\SitePhotoCollectionController;
 use App\Http\Controllers\Api\SitePhotoController;
 use App\Http\Controllers\Api\StaffInvitationController;
 use App\Http\Controllers\Api\SupplierController;
@@ -77,6 +82,10 @@ Route::prefix('v1')->group(function () {
             Route::middleware('company.context')->group(function () {
                 Route::get('/company', [CompanyController::class, 'show']);
                 Route::match(['put', 'patch'], '/company', [CompanyController::class, 'update']);
+                Route::get('/clients/account-options', [ClientController::class, 'accountOptions']);
+                Route::get('/clients/directory', ClientDirectoryController::class);
+                Route::post('/clients/{id}/account', [ClientController::class, 'createLoginAccount']);
+                Route::get('/clients/accounts', ClientAccountController::class);
                 Route::get('/clients/lookup', [ClientController::class, 'lookup']);
                 Route::get('/clients', [ClientController::class, 'index']);
                 Route::post('/clients', [ClientController::class, 'store']);
@@ -154,6 +163,9 @@ Route::prefix('v1')->group(function () {
                 Route::match(['put', 'patch'], '/projects/{id}/stock-adjustments/{adjustmentId}', [MaterialStockAdjustmentController::class, 'update']);
                 Route::post('/projects/{id}/stock-adjustments/{adjustmentId}/post', [MaterialStockAdjustmentController::class, 'post']);
                 Route::post('/projects/{id}/stock-adjustments/{adjustmentId}/cancel', [MaterialStockAdjustmentController::class, 'cancel']);
+                Route::get('/inventory', InventoryCollectionController::class);
+                Route::get('/site-photos', SitePhotoCollectionController::class);
+                Route::get('/daily-reports', DailySiteReportCollectionController::class);
                 Route::get('/projects/{id}/daily-reports', [DailySiteReportController::class, 'index']);
                 Route::post('/projects/{id}/daily-reports', [DailySiteReportController::class, 'store']);
                 Route::get('/projects/{id}/daily-reports/{reportId}', [DailySiteReportController::class, 'show']);

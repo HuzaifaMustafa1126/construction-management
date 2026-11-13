@@ -111,7 +111,11 @@ export const departmentsApi = {
     api.get(`/v1/departments/${id}/users`, { params }).then((r) => r.data),
 };
 export const clientsApi = {
-  list: (params) => api.get("/v1/clients", { params }).then((r) => r.data),
+  directory: (params, { signal } = {}) => api.get("/v1/clients/directory", { params, signal }).then((r) => r.data),
+  accountOptions: ({ signal } = {}) => api.get("/v1/clients/account-options", { signal }).then((r) => unwrap(r)),
+  createAccount: (id, payload) => api.post(`/v1/clients/${id}/account`, payload).then((r) => unwrap(r)),
+  accounts: (params, { signal } = {}) => api.get("/v1/clients/accounts", { params, signal }).then((r) => r.data),
+  list: (params, { signal } = {}) => api.get("/v1/clients", { params, signal }).then((r) => r.data),
   lookup: (params, { signal } = {}) =>
     api.get("/v1/clients/lookup", { params, signal }).then((r) => unwrap(r)),
   get: (id) => api.get(`/v1/clients/${id}`).then((r) => unwrap(r)),
@@ -121,11 +125,11 @@ export const clientsApi = {
   remove: (id) => api.delete(`/v1/clients/${id}`).then((r) => unwrap(r)),
 };
 export const projectsApi = {
-  list: (params) => api.get("/v1/projects", { params }).then((r) => r.data),
+  list: (params, signal) => api.get("/v1/projects", { params, signal }).then((r) => r.data),
   archived: (params) =>
     api.get("/v1/projects/archived", { params }).then((r) => r.data),
   managers: () => api.get("/v1/projects/managers").then((r) => unwrap(r)),
-  get: (id) => api.get(`/v1/projects/${id}`).then((r) => unwrap(r)),
+  get: (id, signal) => api.get(`/v1/projects/${id}`, { signal }).then((r) => unwrap(r)),
   create: (payload) => api.post("/v1/projects", payload).then((r) => unwrap(r)),
   update: (id, payload) =>
     api.patch(`/v1/projects/${id}`, payload).then((r) => unwrap(r)),
