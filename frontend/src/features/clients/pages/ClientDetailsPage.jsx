@@ -50,6 +50,7 @@ export default function ClientDetailsPage() {
         <AppBadge>{client.has_login_account == null ? "Link status unavailable" : client.has_login_account ? "Linked account" : "No login account"}</AppBadge>
         {can("users.view") && client.account && <p>{client.account.email} | {client.account.deleted ? "Deleted account" : client.account.status}</p>}
         <p className="field-description">Contact email changes do not change login email. Manage account changes in Users. Project membership remains separate.</p>
+        {can("clients.update") && can("users.create") && can("roles.assign") && options.error && <AppAlert tone="danger">{apiMessage(options.error, "Account creation availability could not be checked.")}</AppAlert>}
         {can("clients.update") && can("users.create") && can("roles.assign") && options.data?.reason && <AppAlert tone="warning">{options.data.reason}</AppAlert>}
         {client.has_login_account !== true && can("clients.update") && can("users.create") && can("roles.assign") && <AppButton disabled={!options.data?.can_link} onClick={() => setLinking(true)}>Create login account</AppButton>}
         {client.has_login_account && can("users.view") && <Link className="app-button secondary" to="/users">Manage in Users</Link>}

@@ -110,7 +110,7 @@ class ClientController extends Controller
         }
         $client = $this->clients->update($client, $request->validated(), $request->user());
 
-        return response()->json(['data' => new ClientResource($client->loadCount('projects')), 'message' => 'Client updated successfully.']);
+        return response()->json(['data' => new ClientResource($this->loadClient($client, $request, $tenant->companyId())), 'message' => 'Client updated successfully.']);
     }
 
     public function destroy(Request $request, TenantContext $tenant, int $id): JsonResponse

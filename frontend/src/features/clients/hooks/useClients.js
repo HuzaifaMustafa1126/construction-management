@@ -64,5 +64,5 @@ export function useClientDirectory(params) {
 export function useClientAccountOptions() {
   const keys = useClientKeys();
   const { can } = useAuth();
-  return useQuery({ queryKey: [...keys.root, "account-options"], queryFn: ({ signal }) => clientsApi.accountOptions({ signal }), enabled: ["clients.view", "clients.create", "clients.update"].some((permission) => can(permission)) });
+  return useQuery({ queryKey: [...keys.root, "account-options", ...["clients.create", "clients.update", "users.create", "roles.assign"].map((permission) => can(permission))], queryFn: ({ signal }) => clientsApi.accountOptions({ signal }), enabled: ["clients.view", "clients.create", "clients.update"].some((permission) => can(permission)) });
 }

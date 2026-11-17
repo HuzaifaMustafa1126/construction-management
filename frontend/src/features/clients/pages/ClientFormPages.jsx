@@ -31,7 +31,8 @@ export function CreateClientPage() {
           onSubmit={async (payload) => {
             const client = await mutation.mutateAsync(payload);
             toast.success("Client and login account created.");
-            navigate(`/clients/${client.id}`);
+            if (can("clients.view")) navigate(`/clients/${client.id}`);
+            else navigate(can("users.view") ? "/users" : "/dashboard");
           }}
         />
       </>}
