@@ -7,19 +7,25 @@ use App\Models\DailySiteReport;
 use App\Models\MaterialConsumption;
 use App\Models\MaterialDelivery;
 use App\Models\MaterialStockAdjustment;
+use App\Models\Milestone;
 use App\Models\Project;
 use App\Models\ProjectInventory;
+use App\Models\ProjectPhase;
 use App\Models\SitePhoto;
 use App\Models\Supplier;
+use App\Models\Task;
 use App\Policies\ClientPolicy;
 use App\Policies\DailySiteReportPolicy;
 use App\Policies\MaterialConsumptionPolicy;
 use App\Policies\MaterialDeliveryPolicy;
 use App\Policies\MaterialStockAdjustmentPolicy;
+use App\Policies\MilestonePolicy;
 use App\Policies\ProjectInventoryPolicy;
+use App\Policies\ProjectPhasePolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\SitePhotoPolicy;
 use App\Policies\SupplierPolicy;
+use App\Policies\TaskPolicy;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -57,6 +63,8 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('staff-invitations-accept', fn ($request) => Limit::perMinute(5)
             ->by('staff-invitations-accept:'.$request->ip()));
 
+        Gate::policy(Milestone::class, MilestonePolicy::class);
+        Gate::policy(Task::class, TaskPolicy::class);
         Gate::policy(Project::class, ProjectPolicy::class);
         Gate::policy(Client::class, ClientPolicy::class);
         Gate::policy(ProjectInventory::class, ProjectInventoryPolicy::class);
@@ -65,6 +73,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(MaterialConsumption::class, MaterialConsumptionPolicy::class);
         Gate::policy(MaterialStockAdjustment::class, MaterialStockAdjustmentPolicy::class);
         Gate::policy(DailySiteReport::class, DailySiteReportPolicy::class);
+        Gate::policy(ProjectPhase::class, ProjectPhasePolicy::class);
         Gate::policy(SitePhoto::class, SitePhotoPolicy::class);
     }
 }

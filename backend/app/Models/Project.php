@@ -58,11 +58,36 @@ class Project extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    public static function permitsAssignmentType(User $user, string $type): bool
+    {
+        return match ($type) {
+            'supervisor' => $user->hasRole('site_supervisor'),
+            'client' => $user->hasRole('client'),
+            'member' => $user->hasAnyRole(['company_admin', 'project_manager', 'site_supervisor']),
+            default => false,
+        };
+    }
+
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class)->withPivot([
             'id', 'company_id', 'assignment_type', 'assigned_by', 'assigned_at',
         ])->withTimestamps();
+    }
+
+    public function phases(): HasMany
+    {
+        return $this->hasMany(ProjectPhase::class)->orderBy('sequence')->orderBy('id');
+    }
+
+    public function milestones(): HasMany
+    {
+        return $this->hasMany(Milestone::class)->orderBy('due_date')->orderBy('id');
+    }
+
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class);
     }
 
     public function dailySiteReports(): HasMany

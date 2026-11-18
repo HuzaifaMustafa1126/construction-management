@@ -46,7 +46,7 @@ class ProjectTeamController extends Controller
                 $errors["members.{$index}.user_id"][] = 'The selected user is invalid for this company.';
             } elseif (! $user->isActive()) {
                 $errors["members.{$index}.user_id"][] = 'Only active users can be assigned.';
-            } elseif (! $this->eligible($user, $assignment['assignment_type'])) {
+            } elseif (! Project::permitsAssignmentType($user, $assignment['assignment_type'])) {
                 $errors["members.{$index}.assignment_type"][] = 'The user is not eligible for this assignment type.';
             }
         }
@@ -90,16 +90,6 @@ class ProjectTeamController extends Controller
         $project = Project::query()->forCompany($tenant->companyId())->find($id);
 
         return $project && $request->user()->can('view', $project) ? $project : null;
-    }
-
-    private function eligible(User $user, string $type): bool
-    {
-        return match ($type) {
-            'supervisor' => $user->hasRole('site_supervisor'),
-            'client' => $user->hasRole('client'),
-            'member' => $user->hasAnyRole(['company_admin', 'project_manager', 'site_supervisor']),
-            default => false,
-        };
     }
 
     private function memberLog(Request $request, Project $project, string $event, int $userId, string $type): void
