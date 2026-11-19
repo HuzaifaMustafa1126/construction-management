@@ -1,2 +1,5 @@
 *
 !.gitignore
+!task-attachments/
+task-attachments/*
+!task-attachments/.htaccess

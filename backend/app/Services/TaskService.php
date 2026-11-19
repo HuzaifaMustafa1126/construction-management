@@ -6,47 +6,42 @@ use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class TaskService
 {
+    public function __construct(private readonly ProgressService $progress) {}
+
     public function create(Project $project, User $creator, array $attributes): Task
     {
-        return DB::transaction(function () use ($project, $creator, $attributes): Task {
-            $project = $this->lockProject($project);
+        return $this->progress->withLockedProject($project, function (Project $project) use ($creator, $attributes): Task {
             $task = $project->tasks()->make();
             $task->created_by = $creator->id;
             $task->position = (int) $project->tasks()->max('position') + 1;
             abort_if($task->position > 4294967295, 409, 'The task position limit for this project was reached.');
 
-            return $this->save($project, $task, Arr::except($attributes, ['position']));
-        }, 3);
+            return $this->save($project, $task, Arr::except($attributes, ['position']), $creator);
+        });
     }
 
-    public function update(Project $project, Task $task, array $attributes): Task
+    public function update(Project $project, Task $task, array $attributes, User $actor): Task
     {
-        return DB::transaction(function () use ($project, $task, $attributes): Task {
-            $project = $this->lockProject($project);
-            $task = $project->tasks()->findOrFail($task->id);
+        return $this->progress->withLockedProject($project, function (Project $project) use ($task, $attributes, $actor): Task {
+            $task = $project->tasks()->lockForUpdate()->findOrFail($task->id);
 
-            return $this->save($project, $task, $attributes);
-        }, 3);
+            return $this->save($project, $task, $attributes, $actor);
+        });
     }
 
-    public function delete(Project $project, Task $task): void
+    public function delete(Project $project, Task $task, User $actor): void
     {
-        DB::transaction(function () use ($project, $task): void {
-            $this->lockProject($project)->tasks()->findOrFail($task->id)->delete();
-        }, 3);
+        $this->progress->withLockedProject($project, function (Project $project) use ($task, $actor): void {
+            $project->tasks()->lockForUpdate()->findOrFail($task->id)->delete();
+            $this->progress->recalculateProject($project, $actor);
+        });
     }
 
-    private function lockProject(Project $project): Project
-    {
-        return Project::query()->lockForUpdate()->findOrFail($project->id);
-    }
-
-    private function save(Project $project, Task $task, array $attributes): Task
+    private function save(Project $project, Task $task, array $attributes, User $actor): Task
     {
         $wasCompleted = $task->status === 'completed';
         $task->fill($attributes);
@@ -67,6 +62,10 @@ class TaskService
         }
 
         $task->save();
+
+        if ($task->wasRecentlyCreated || $task->wasChanged(['phase_id', 'status', 'progress_percentage'])) {
+            $this->progress->recalculateProject($project, $actor);
+        }
 
         return $task;
     }

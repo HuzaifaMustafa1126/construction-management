@@ -12,6 +12,7 @@ use App\Http\Resources\Api\V1\ProjectOverviewResource;
 use App\Http\Resources\Api\V1\ProjectResource;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\ProgressService;
 use App\Services\ProjectService;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Builder;
@@ -208,7 +209,7 @@ class ProjectController extends Controller
         return response()->json(['data' => new ProjectResource($project->load(['members.roles:id,name', 'client:id,name,company_name'])), 'message' => 'Project status updated successfully.']);
     }
 
-    public function progress(UpdateProjectProgressRequest $request, TenantContext $tenant, int $id): JsonResponse
+    public function progress(UpdateProjectProgressRequest $request, TenantContext $tenant, ProgressService $progress, int $id): JsonResponse
     {
         $project = $this->viewable($request, $tenant, $id);
         if (! $project) {
@@ -217,12 +218,7 @@ class ProjectController extends Controller
         if (! $request->user()->can('projects.edit') || ! $request->user()->can('update', $project)) {
             return $this->forbidden();
         }
-        $before = $project->progress_percentage;
-        $progress = $request->validated('progress_percentage');
-        $project->progress_percentage = $progress;
-        $project->updated_by = $request->user()->id;
-        $project->save();
-        $this->log($request, $project, 'project.progress_changed', ['before' => $before, 'after' => $progress]);
+        $project = $progress->updateManualProgress($project, $request->integer('progress_percentage'), $request->user());
 
         return response()->json(['data' => new ProjectResource($project->load(['members.roles:id,name', 'client:id,name,company_name'])), 'message' => 'Project progress updated successfully.']);
     }

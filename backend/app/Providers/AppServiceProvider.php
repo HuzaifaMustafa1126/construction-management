@@ -29,6 +29,7 @@ use App\Policies\TaskPolicy;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -62,6 +63,8 @@ class AppServiceProvider extends ServiceProvider
             ->by('staff-invitations-inspect:'.$request->ip()));
         RateLimiter::for('staff-invitations-accept', fn ($request) => Limit::perMinute(5)
             ->by('staff-invitations-accept:'.$request->ip()));
+
+        Relation::morphMap(['task' => Task::class]);
 
         Gate::policy(Milestone::class, MilestonePolicy::class);
         Gate::policy(Task::class, TaskPolicy::class);

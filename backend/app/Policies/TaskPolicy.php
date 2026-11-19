@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Attachment;
 use App\Models\Project;
 use App\Models\TaskComment;
 use App\Models\User;
@@ -49,6 +50,12 @@ class TaskPolicy
     {
         return $this->update($user, $project)
             || ((int) $comment->user_id === (int) $user->id && $this->participate($user, $project));
+    }
+
+    public function deleteAttachment(User $user, Project $project, Attachment $attachment): bool
+    {
+        return $this->update($user, $project)
+            || ($attachment->uploaded_by === (int) $user->id && $this->participate($user, $project));
     }
 
     public function changeStatus(User $user, Project $project): bool

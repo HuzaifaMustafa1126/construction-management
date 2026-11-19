@@ -67,17 +67,17 @@ class TaskController extends Controller
 
     public function update(UpdateTaskRequest $request): TaskResource
     {
-        return new TaskResource($this->tasks->update($request->project, $request->task, $request->validated()));
+        return new TaskResource($this->tasks->update($request->project, $request->task, $request->validated(), $request->user()));
     }
 
     public function status(UpdateTaskStatusRequest $request): TaskResource
     {
-        return new TaskResource($this->tasks->update($request->project, $request->task, $request->validated()));
+        return new TaskResource($this->tasks->update($request->project, $request->task, $request->validated(), $request->user()));
     }
 
     public function destroy(TaskRequest $request): Response
     {
-        $this->tasks->delete($request->project, $request->task);
+        $this->tasks->delete($request->project, $request->task, $request->user());
 
         return response()->noContent();
     }

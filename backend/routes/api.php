@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AcceptStaffInvitationController;
 use App\Http\Controllers\Api\AdministratorPasswordController;
+use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClientAccountController;
 use App\Http\Controllers\Api\ClientController;
@@ -155,6 +156,14 @@ Route::prefix('v1')->group(function () {
                 Route::patch('/tasks/{taskId}/checklist/reorder', [TaskChecklistController::class, 'reorder'])->whereNumber('taskId');
                 Route::patch('/tasks/{taskId}/checklist/{itemId}', [TaskChecklistController::class, 'update'])->whereNumber(['taskId', 'itemId']);
                 Route::delete('/tasks/{taskId}/checklist/{itemId}', [TaskChecklistController::class, 'destroy'])->whereNumber(['taskId', 'itemId']);
+                Route::prefix('/tasks/{taskId}/attachments')->whereNumber('taskId')->group(function () {
+                    Route::get('/', [AttachmentController::class, 'index']);
+                    Route::post('/', [AttachmentController::class, 'store']);
+                    Route::get('/{attachmentId}', [AttachmentController::class, 'show'])->whereNumber('attachmentId');
+                    Route::get('/{attachmentId}/preview', [AttachmentController::class, 'preview'])->whereNumber('attachmentId');
+                    Route::get('/{attachmentId}/download', [AttachmentController::class, 'download'])->whereNumber('attachmentId');
+                    Route::delete('/{attachmentId}', [AttachmentController::class, 'destroy'])->whereNumber('attachmentId');
+                });
                 Route::get('/tasks/{taskId}/comments', [TaskCommentController::class, 'index'])->whereNumber('taskId');
                 Route::post('/tasks/{taskId}/comments', [TaskCommentController::class, 'store'])->whereNumber('taskId');
                 Route::patch('/tasks/{taskId}/comments/{commentId}', [TaskCommentController::class, 'update'])->whereNumber(['taskId', 'commentId']);
