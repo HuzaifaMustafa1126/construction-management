@@ -163,9 +163,9 @@ class VersionedApiTest extends TestCase
         $this->withToken($this->tokenFor($admin))
             ->deleteJson("/api/v1/users/{$target->id}")
             ->assertOk()
-            ->assertExactJson(['message' => 'User deleted successfully.']);
+            ->assertExactJson(['message' => 'User permanently deleted successfully.']);
 
-        $this->assertSoftDeleted('users', ['id' => $target->id]);
+        $this->assertDatabaseMissing('users', ['id' => $target->id]);
     }
 
     public function test_admin_cannot_delete_their_own_account(): void

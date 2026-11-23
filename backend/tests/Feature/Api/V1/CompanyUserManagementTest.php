@@ -116,9 +116,10 @@ class CompanyUserManagementTest extends TestCase
         $this->withToken($token)->patchJson("/api/v1/users/{$foreign->id}", ['phone' => '1'])->assertNotFound();
     }
 
-    public function test_admin_can_suspend_and_reactivate_user_and_issued_token_is_blocked_while_suspended(): void
+    public function test_suspension_revokes_issued_tokens_and_reactivation_allows_a_new_login(): void
     {
-        $target = User::factory()->for($this->companyA)->create();
+        $password = 'StrongPassword123!';
+        $target = User::factory()->for($this->companyA)->create(['password' => $password]);
         $this->grantRole($target, 'client');
         $targetToken = $this->token($target);
         $adminToken = $this->token($this->adminA);
@@ -126,12 +127,16 @@ class CompanyUserManagementTest extends TestCase
         $this->withToken($adminToken)->patchJson("/api/v1/users/{$target->id}/status", ['status' => 'Suspended'])
             ->assertOk()->assertJsonPath('user.status', 'Suspended');
         $this->app['auth']->forgetGuards();
-        $this->withToken($targetToken)->getJson('/api/v1/me')->assertForbidden();
+        $this->withToken($targetToken)->getJson('/api/v1/me')->assertUnauthorized();
         $this->app['auth']->forgetGuards();
         $this->withToken($adminToken)->patchJson("/api/v1/users/{$target->id}/status", ['status' => 'Active'])
             ->assertOk()->assertJsonPath('user.status', 'Active');
         $this->app['auth']->forgetGuards();
-        $this->withToken($targetToken)->getJson('/api/v1/me')->assertOk();
+        $this->withToken($targetToken)->getJson('/api/v1/me')->assertUnauthorized();
+        $newToken = $this->postJson('/api/v1/login', [
+            'email' => $target->email, 'password' => $password,
+        ])->assertOk()->json('token');
+        $this->withToken($newToken)->getJson('/api/v1/me')->assertOk();
     }
 
     public function test_last_active_company_admin_cannot_be_suspended(): void
@@ -154,7 +159,7 @@ class CompanyUserManagementTest extends TestCase
         }
     }
 
-    public function test_permitted_user_is_soft_deleted_and_cannot_login_or_use_existing_token(): void
+    public function test_permitted_user_is_permanently_deleted_and_cannot_login_or_use_existing_token(): void
     {
         $target = User::factory()->for($this->companyA)->create(['password' => 'password123']);
         $this->grantRole($target, 'client');
@@ -162,7 +167,7 @@ class CompanyUserManagementTest extends TestCase
 
         $this->withToken($this->token($this->adminA))->deleteJson("/api/v1/users/{$target->id}")
             ->assertOk();
-        $this->assertSoftDeleted('users', ['id' => $target->id]);
+        $this->assertDatabaseMissing('users', ['id' => $target->id]);
         $this->app['auth']->forgetGuards();
         $this->postJson('/api/v1/login', ['email' => $target->email, 'password' => 'password123'])->assertUnauthorized();
         $this->app['auth']->forgetGuards();

@@ -168,7 +168,7 @@ class DailySiteReportsTest extends TestCase
     {
         $report = $this->report($this->projectA, $this->supervisorA);
         $this->addWorker($report, 'mason', 2);
-        $report->update(['total_workers_present' => 2]);
+        $this->withinCompany($this->companyA, fn () => $report->update(['total_workers_present' => 2]));
         $token = $this->token($this->supervisorA);
         $this->withToken($token)->patchJson($this->reportUrl($report), ['workers' => [
             ['worker_type' => 'helper', 'workers_present' => 5], ['worker_type' => 'electrician', 'workers_present' => 3],
@@ -274,9 +274,9 @@ class DailySiteReportsTest extends TestCase
 
     private function project(Company $company, User $creator, string $code): Project
     {
-        return Project::factory()->for($company)->create([
+        return $this->withinCompany($company, fn () => Project::factory()->for($company)->create([
             'created_by' => $creator->id, 'currency' => $company->currency, 'code' => $code,
-        ]);
+        ]));
     }
 
     private function attach(Project $project, User $user, string $type): void
@@ -287,10 +287,10 @@ class DailySiteReportsTest extends TestCase
 
     private function report(Project $project, User $creator, array $attributes = []): DailySiteReport
     {
-        return DailySiteReport::factory()->create(array_merge([
+        return $this->withinCompany($creator->company, fn () => DailySiteReport::factory()->create(array_merge([
             'company_id' => $project->company_id, 'project_id' => $project->id,
             'created_by' => $creator->id, 'report_date' => '2026-10-19', 'title' => 'Daily Report',
-        ], $attributes));
+        ], $attributes)));
     }
 
     private function payload(string $date = '2026-10-19'): array
@@ -305,14 +305,14 @@ class DailySiteReportsTest extends TestCase
 
     private function setReportState(DailySiteReport $report, array $attributes): void
     {
-        $report->forceFill($attributes)->save();
+        $this->withinCompany($report->company, fn () => $report->forceFill($attributes)->save());
     }
 
     private function addWorker(DailySiteReport $report, string $type, int $count): void
     {
         $worker = $report->workers()->make(['worker_type' => $type, 'workers_present' => $count]);
         $worker->company_id = $report->company_id;
-        $worker->save();
+        $this->withinCompany($report->company, fn () => $worker->save());
     }
 
     private function collectionUrl(): string

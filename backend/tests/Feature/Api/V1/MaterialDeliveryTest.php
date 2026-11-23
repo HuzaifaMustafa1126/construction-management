@@ -70,7 +70,7 @@ class MaterialDeliveryTest extends TestCase
     public function test_admin_creates_multi_item_draft_without_stock_and_number_is_unique(): void
     {
         $r = $this->withToken($this->token($this->admin))->postJson($this->url(), $this->payload())->assertCreated()->assertJsonPath('data.status', 'draft')->assertJsonCount(2, 'data.items');
-        $d = MaterialDelivery::findOrFail($r->json('data.id'));
+        $d = $this->withinCompany($this->a, fn () => MaterialDelivery::findOrFail($r->json('data.id')));
         $this->assertNotEmpty($d->delivery_number);
         $this->assertDatabaseCount('inventory_transactions', 0);
         $r2 = $this->withToken($this->token($this->admin))->postJson($this->url(), $this->payload())->assertCreated();
@@ -143,7 +143,7 @@ class MaterialDeliveryTest extends TestCase
     public function test_database_source_uniqueness_and_failed_receipt_roll_back(): void
     {
         $d = $this->draft();
-        $first = $d->items()->orderBy('id')->firstOrFail();
+        $first = $this->withinCompany($this->a, fn () => $d->items()->orderBy('id')->firstOrFail());
         $this->receivedTx($first);
         $response = $this->withToken($this->token($this->admin))->postJson($this->itemUrl($d).'/receive', ['received_at' => now()->toIso8601String()])->assertConflict();
         $this->assertSame('draft', $d->fresh()->status);
@@ -157,7 +157,7 @@ class MaterialDeliveryTest extends TestCase
         $token = $this->token($this->admin);
         $this->withToken($token)->getJson($this->url()."?supplier_id={$this->supplier->id}&status=draft&date_from=2026-10-01&date_to=2026-10-31&search=".urlencode($d->delivery_number).'&per_page=1')->assertOk()->assertJsonPath('meta.total', 1);
         $this->withToken($token)->postJson($this->itemUrl($d).'/receive', ['received_at' => now()->toIso8601String()])->assertOk();
-        $this->supplier->delete();
+        $this->withinCompany($this->a, fn () => $this->supplier->delete());
         $this->withToken($token)->getJson($this->itemUrl($d))->assertOk()->assertJsonPath('data.supplier.id', $this->supplier->id);
         $events = DB::table('activity_log')->whereIn('event', ['material_delivery.created', 'material_delivery.received'])->pluck('event')->all();
         $this->assertContains('material_delivery.created', $events);
@@ -174,7 +174,7 @@ class MaterialDeliveryTest extends TestCase
 
     private function project(Company $c, User $u, string $code): Project
     {
-        return Project::factory()->for($c)->create(['created_by' => $u->id, 'currency' => $c->currency, 'code' => $code]);
+        return $this->withinCompany($c, fn () => Project::factory()->for($c)->create(['created_by' => $u->id, 'currency' => $c->currency, 'code' => $code]));
     }
 
     private function attach(Project $p, User $u, string $type): void
@@ -184,20 +184,22 @@ class MaterialDeliveryTest extends TestCase
 
     private function supplier(Company $c, User $u): Supplier
     {
-        return Supplier::forceCreate(['company_id' => $c->id, 'name' => 'Supplier '.uniqid(), 'is_active' => true, 'created_by' => $u->id]);
+        return $this->withinCompany($c, fn () => Supplier::forceCreate(['company_id' => $c->id, 'name' => 'Supplier '.uniqid(), 'is_active' => true, 'created_by' => $u->id]));
     }
 
     private function material(Company $c, User $u, string $code, int $precision): Material
     {
-        $unit = MeasurementUnit::forceCreate(['company_id' => $c->id, 'name' => 'U'.$code, 'symbol' => 'u'.strtolower($code), 'unit_type' => 'count', 'decimal_precision' => $precision, 'is_system' => false, 'is_active' => true]);
-        $cat = MaterialCategory::forceCreate(['company_id' => $c->id, 'name' => 'C'.$code, 'is_active' => true, 'created_by' => $u->id]);
+        return $this->withinCompany($c, function () use ($c, $u, $code, $precision): Material {
+            $unit = MeasurementUnit::forceCreate(['company_id' => $c->id, 'name' => 'U'.$code, 'symbol' => 'u'.strtolower($code), 'unit_type' => 'count', 'decimal_precision' => $precision, 'is_system' => false, 'is_active' => true]);
+            $cat = MaterialCategory::forceCreate(['company_id' => $c->id, 'name' => 'C'.$code, 'is_active' => true, 'created_by' => $u->id]);
 
-        return Material::forceCreate(['company_id' => $c->id, 'material_category_id' => $cat->id, 'measurement_unit_id' => $unit->id, 'name' => 'M'.$code, 'code' => $code, 'is_active' => true, 'created_by' => $u->id]);
+            return Material::forceCreate(['company_id' => $c->id, 'material_category_id' => $cat->id, 'measurement_unit_id' => $unit->id, 'name' => 'M'.$code, 'code' => $code, 'is_active' => true, 'created_by' => $u->id]);
+        });
     }
 
     private function inventory(Project $p, Material $m): ProjectInventory
     {
-        return ProjectInventory::forceCreate(['company_id' => $p->company_id, 'project_id' => $p->id, 'material_id' => $m->id, 'minimum_stock_level' => '0', 'created_by' => $p->created_by]);
+        return $this->withinCompany($p->company, fn () => ProjectInventory::forceCreate(['company_id' => $p->company_id, 'project_id' => $p->id, 'material_id' => $m->id, 'minimum_stock_level' => '0', 'created_by' => $p->created_by]));
     }
 
     private function payload(?array $items = null): array
@@ -209,17 +211,17 @@ class MaterialDeliveryTest extends TestCase
     {
         $r = $this->withToken($this->token($this->admin))->postJson($this->url(), $this->payload($items))->assertCreated();
 
-        return MaterialDelivery::findOrFail($r->json('data.id'));
+        return $this->withinCompany($this->a, fn () => MaterialDelivery::findOrFail($r->json('data.id')));
     }
 
     private function opening(ProjectInventory $i, string $q): void
     {
-        InventoryTransaction::forceCreate(['company_id' => $i->company_id, 'project_id' => $i->project_id, 'project_inventory_id' => $i->id, 'material_id' => $i->material_id, 'transaction_type' => 'opening_stock', 'quantity' => $q, 'direction' => 'in', 'transaction_date' => '2026-10-21', 'created_by' => $this->admin->id]);
+        $this->withinCompany($i->company, fn () => InventoryTransaction::forceCreate(['company_id' => $i->company_id, 'project_id' => $i->project_id, 'project_inventory_id' => $i->id, 'material_id' => $i->material_id, 'transaction_type' => 'opening_stock', 'quantity' => $q, 'direction' => 'in', 'transaction_date' => '2026-10-21', 'created_by' => $this->admin->id]));
     }
 
     private function receivedTx(MaterialDeliveryItem $item): void
     {
-        InventoryTransaction::forceCreate(['company_id' => $item->company_id, 'project_id' => $item->delivery->project_id, 'project_inventory_id' => $item->project_inventory_id, 'material_id' => $item->material_id, 'delivery_item_id' => $item->id, 'transaction_type' => 'material_received', 'quantity' => $item->quantity, 'direction' => 'in', 'transaction_date' => '2026-10-21', 'created_by' => $this->admin->id]);
+        $this->withinCompany($this->a, fn () => InventoryTransaction::forceCreate(['company_id' => $item->company_id, 'project_id' => $item->delivery->project_id, 'project_inventory_id' => $item->project_inventory_id, 'material_id' => $item->material_id, 'delivery_item_id' => $item->id, 'transaction_type' => 'material_received', 'quantity' => $item->quantity, 'direction' => 'in', 'transaction_date' => '2026-10-21', 'created_by' => $this->admin->id]));
     }
 
     private function token(User $u): string

@@ -87,7 +87,7 @@ class MaterialCatalogTest extends TestCase
         $material = $this->makeMaterial($a);
         $this->app['auth']->forgetGuards();
         $this->withToken($this->token($this->adminA))->deleteJson("/api/v1/material-categories/{$a->id}")->assertOk();
-        $this->assertNotNull($material->fresh()->category);
+        $this->assertNotNull($this->withinCompany($material->company, fn () => $material->fresh()->category));
         $this->assertDatabaseHas('materials', ['id' => $material->id]);
     }
 
@@ -109,9 +109,9 @@ class MaterialCatalogTest extends TestCase
     {
         $category = $this->createCategory($this->adminA, 'Bricks');
         $unit = $this->customUnit($this->a, 'pallet');
-        $category->update(['is_active' => false]);
+        $this->withinCompany($category->company, fn () => $category->update(['is_active' => false]));
         $this->withToken($this->token($this->adminA))->postJson('/api/v1/materials', $this->materialPayload($category, $unit))->assertUnprocessable()->assertJsonValidationErrors('material_category_id');
-        $category->update(['is_active' => true]);
+        $this->withinCompany($category->company, fn () => $category->update(['is_active' => true]));
         $unit->update(['is_active' => false]);
         $this->withToken($this->token($this->adminA))->postJson('/api/v1/materials', $this->materialPayload($category, $unit))->assertUnprocessable()->assertJsonValidationErrors('measurement_unit_id');
         $unit->update(['is_active' => true]);
@@ -185,7 +185,7 @@ class MaterialCatalogTest extends TestCase
         $this->app['auth']->forgetGuards();
         $response = $this->withToken($this->token($admin))->postJson('/api/v1/material-categories', ['name' => $name])->assertCreated();
 
-        return MaterialCategory::findOrFail($response->json('data.id'));
+        return $this->withinCompany($admin->company, fn () => MaterialCategory::findOrFail($response->json('data.id')));
     }
 
     private function customUnit(Company $company, string $symbol): MeasurementUnit
@@ -200,6 +200,6 @@ class MaterialCatalogTest extends TestCase
 
     private function makeMaterial(MaterialCategory $category, ?MeasurementUnit $unit = null, string $code = 'MAT-001', string $name = 'Test Material'): Material
     {
-        return Material::forceCreate(['company_id' => $category->company_id, 'material_category_id' => $category->id, 'measurement_unit_id' => ($unit ?? $this->systemUnit)->id, 'name' => $name, 'code' => $code, 'is_active' => true, 'created_by' => $category->created_by]);
+        return $this->withinCompany($category->company, fn () => Material::forceCreate(['company_id' => $category->company_id, 'material_category_id' => $category->id, 'measurement_unit_id' => ($unit ?? $this->systemUnit)->id, 'name' => $name, 'code' => $code, 'is_active' => true, 'created_by' => $category->created_by]));
     }
 }

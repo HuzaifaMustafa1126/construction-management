@@ -74,7 +74,7 @@ class CompanyDepartmentManagementTest extends TestCase
         $this->withToken($token)->patchJson("/api/v1/departments/{$id}", ['name' => 'Operations'])
             ->assertOk()->assertJsonPath('data.name', 'Operations');
 
-        $foreign = Department::factory()->for($this->companyB)->create();
+        $foreign = $this->withinCompany($this->companyB, fn () => Department::factory()->for($this->companyB)->create());
         $this->withToken($token)->getJson("/api/v1/departments/{$foreign->id}")->assertNotFound();
         $this->withToken($token)->patchJson("/api/v1/departments/{$foreign->id}", ['name' => 'Nope'])->assertNotFound();
         $this->withToken($token)->deleteJson("/api/v1/departments/{$foreign->id}")->assertNotFound();
@@ -82,8 +82,8 @@ class CompanyDepartmentManagementTest extends TestCase
 
     public function test_department_uniqueness_is_case_insensitive_per_company_and_reusable_after_delete(): void
     {
-        $department = Department::factory()->for($this->companyA)->create(['name' => 'Finance', 'code' => 'FIN']);
-        Department::factory()->for($this->companyB)->create(['name' => 'Finance', 'code' => 'FIN']);
+        $department = $this->withinCompany($this->companyA, fn () => Department::factory()->for($this->companyA)->create(['name' => 'Finance', 'code' => 'FIN']));
+        $this->withinCompany($this->companyB, fn () => Department::factory()->for($this->companyB)->create(['name' => 'Finance', 'code' => 'FIN']));
         $token = $this->token($this->adminA);
 
         $this->withToken($token)->postJson('/api/v1/departments', ['name' => 'finance', 'code' => 'fin'])
@@ -96,9 +96,9 @@ class CompanyDepartmentManagementTest extends TestCase
 
     public function test_department_listing_filters_sorts_and_never_leaks_tenants(): void
     {
-        Department::factory()->for($this->companyA)->create(['name' => 'Zulu', 'code' => 'ZUL', 'status' => 'Inactive']);
-        $match = Department::factory()->for($this->companyA)->create(['name' => 'Alpha Site', 'code' => 'ALP']);
-        $foreign = Department::factory()->for($this->companyB)->create(['name' => 'Alpha Foreign']);
+        $this->withinCompany($this->companyA, fn () => Department::factory()->for($this->companyA)->create(['name' => 'Zulu', 'code' => 'ZUL', 'status' => 'Inactive']));
+        $match = $this->withinCompany($this->companyA, fn () => Department::factory()->for($this->companyA)->create(['name' => 'Alpha Site', 'code' => 'ALP']));
+        $foreign = $this->withinCompany($this->companyB, fn () => Department::factory()->for($this->companyB)->create(['name' => 'Alpha Foreign']));
 
         $this->withToken($this->token($this->adminA))->getJson('/api/v1/departments?search=Alpha&status=Active&sort=name')
             ->assertOk()->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.id', $match->id)
@@ -108,9 +108,9 @@ class CompanyDepartmentManagementTest extends TestCase
     public function test_assignment_requires_active_same_company_department_and_supports_unassign(): void
     {
         $user = User::factory()->for($this->companyA)->create(['status' => 'Active']);
-        $active = Department::factory()->for($this->companyA)->create();
-        $inactive = Department::factory()->for($this->companyA)->create(['status' => 'Inactive']);
-        $foreign = Department::factory()->for($this->companyB)->create();
+        $active = $this->withinCompany($this->companyA, fn () => Department::factory()->for($this->companyA)->create());
+        $inactive = $this->withinCompany($this->companyA, fn () => Department::factory()->for($this->companyA)->create(['status' => 'Inactive']));
+        $foreign = $this->withinCompany($this->companyB, fn () => Department::factory()->for($this->companyB)->create());
         $token = $this->token($this->adminA);
 
         $this->withToken($token)->putJson("/api/v1/users/{$user->id}/department", ['department_id' => $active->id])
@@ -126,7 +126,7 @@ class CompanyDepartmentManagementTest extends TestCase
 
     public function test_department_can_be_deactivated_and_reactivated_without_changing_users(): void
     {
-        $department = Department::factory()->for($this->companyA)->create();
+        $department = $this->withinCompany($this->companyA, fn () => Department::factory()->for($this->companyA)->create());
         $member = User::factory()->for($this->companyA)->create([
             'status' => 'Active', 'department_id' => $department->id,
         ]);
@@ -142,8 +142,8 @@ class CompanyDepartmentManagementTest extends TestCase
 
     public function test_cross_company_user_assignment_is_not_found_and_context_does_not_leak(): void
     {
-        $departmentA = Department::factory()->for($this->companyA)->create();
-        $departmentB = Department::factory()->for($this->companyB)->create();
+        $departmentA = $this->withinCompany($this->companyA, fn () => Department::factory()->for($this->companyA)->create());
+        $departmentB = $this->withinCompany($this->companyB, fn () => Department::factory()->for($this->companyB)->create());
         $foreignUser = User::factory()->for($this->companyB)->create(['status' => 'Active']);
 
         $this->withToken($this->token($this->adminA))
@@ -157,21 +157,21 @@ class CompanyDepartmentManagementTest extends TestCase
 
     public function test_soft_delete_preserves_user_assignment_and_history_but_blocks_new_assignment(): void
     {
-        $department = Department::factory()->for($this->companyA)->create();
+        $department = $this->withinCompany($this->companyA, fn () => Department::factory()->for($this->companyA)->create());
         $assigned = User::factory()->for($this->companyA)->create(['status' => 'Active', 'department_id' => $department->id]);
         $other = User::factory()->for($this->companyA)->create(['status' => 'Active']);
         $token = $this->token($this->adminA);
 
         $this->withToken($token)->deleteJson("/api/v1/departments/{$department->id}")->assertOk();
         $this->assertSame($department->id, $assigned->fresh()->department_id);
-        $this->assertNotNull($assigned->fresh()->department()->first());
+        $this->assertNotNull($this->withinCompany($this->companyA, fn () => $assigned->fresh()->department()->first()));
         $this->withToken($token)->putJson("/api/v1/users/{$other->id}/department", ['department_id' => $department->id])
             ->assertNotFound();
     }
 
     public function test_department_users_and_user_filter_are_tenant_scoped_and_include_details(): void
     {
-        $department = Department::factory()->for($this->companyA)->create(['name' => 'Safety', 'code' => 'SAFE']);
+        $department = $this->withinCompany($this->companyA, fn () => Department::factory()->for($this->companyA)->create(['name' => 'Safety', 'code' => 'SAFE']));
         $member = User::factory()->for($this->companyA)->create(['status' => 'Active', 'department_id' => $department->id, 'department' => 'Legacy']);
         User::factory()->for($this->companyA)->create(['status' => 'Active']);
         $token = $this->token($this->adminA);
@@ -187,7 +187,7 @@ class CompanyDepartmentManagementTest extends TestCase
 
     public function test_supervisor_can_view_but_cannot_mutate_and_client_cannot_view(): void
     {
-        $department = Department::factory()->for($this->companyA)->create();
+        $department = $this->withinCompany($this->companyA, fn () => Department::factory()->for($this->companyA)->create());
         foreach (['site_supervisor', 'client'] as $role) {
             $user = User::factory()->for($this->companyA)->create(['status' => 'Active']);
             $this->grantRole($user, $role);

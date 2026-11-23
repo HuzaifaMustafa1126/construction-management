@@ -31,12 +31,14 @@ class MaterialRequestsTest extends TestCase
         $this->company = Company::factory()->create();
         $this->admin = User::factory()->for($this->company)->create(['status' => 'Active']);
         $this->grantRole($this->admin, 'company_admin');
-        $this->project = Project::factory()->for($this->company)->create(['created_by' => $this->admin->id, 'currency' => $this->company->currency]);
-        $category = MaterialCategory::forceCreate(['company_id' => $this->company->id, 'name' => 'Cement', 'is_active' => true, 'created_by' => $this->admin->id]);
-        $unit = MeasurementUnit::forceCreate(['company_id' => null, 'name' => 'Bag', 'symbol' => 'bag', 'unit_type' => 'count', 'decimal_precision' => 0, 'is_system' => true, 'is_active' => true]);
-        $material = Material::forceCreate(['company_id' => $this->company->id, 'name' => 'Cement', 'code' => 'CEM', 'material_category_id' => $category->id, 'measurement_unit_id' => $unit->id, 'is_active' => true, 'created_by' => $this->admin->id]);
-        $this->inventory = ProjectInventory::forceCreate(['company_id' => $this->company->id, 'project_id' => $this->project->id, 'material_id' => $material->id, 'minimum_stock_level' => 10, 'created_by' => $this->admin->id]);
-        InventoryTransaction::forceCreate(['company_id' => $this->company->id, 'project_id' => $this->project->id, 'project_inventory_id' => $this->inventory->id, 'material_id' => $material->id, 'transaction_type' => 'opening_stock', 'quantity' => 100, 'direction' => 'in', 'transaction_date' => '2026-10-28', 'created_by' => $this->admin->id]);
+        $this->withinCompany($this->company, function (): void {
+            $this->project = Project::factory()->for($this->company)->create(['created_by' => $this->admin->id, 'currency' => $this->company->currency]);
+            $category = MaterialCategory::forceCreate(['company_id' => $this->company->id, 'name' => 'Cement', 'is_active' => true, 'created_by' => $this->admin->id]);
+            $unit = MeasurementUnit::forceCreate(['company_id' => null, 'name' => 'Bag', 'symbol' => 'bag', 'unit_type' => 'count', 'decimal_precision' => 0, 'is_system' => true, 'is_active' => true]);
+            $material = Material::forceCreate(['company_id' => $this->company->id, 'name' => 'Cement', 'code' => 'CEM', 'material_category_id' => $category->id, 'measurement_unit_id' => $unit->id, 'is_active' => true, 'created_by' => $this->admin->id]);
+            $this->inventory = ProjectInventory::forceCreate(['company_id' => $this->company->id, 'project_id' => $this->project->id, 'material_id' => $material->id, 'minimum_stock_level' => 10, 'created_by' => $this->admin->id]);
+            InventoryTransaction::forceCreate(['company_id' => $this->company->id, 'project_id' => $this->project->id, 'project_inventory_id' => $this->inventory->id, 'material_id' => $material->id, 'transaction_type' => 'opening_stock', 'quantity' => 100, 'direction' => 'in', 'transaction_date' => '2026-10-28', 'created_by' => $this->admin->id]);
+        });
     }
 
     public function test_approval_does_not_deduct_and_partial_issue_deducts_once(): void
@@ -87,17 +89,17 @@ class MaterialRequestsTest extends TestCase
 
     public function test_transfer_creates_atomic_pair_and_preserves_total_stock(): void
     {
-        $destinationProject = Project::factory()->for($this->company)->create([
+        $destinationProject = $this->withinCompany($this->company, fn () => Project::factory()->for($this->company)->create([
             'created_by' => $this->admin->id,
             'currency' => $this->company->currency,
-        ]);
-        $destination = ProjectInventory::forceCreate([
+        ]));
+        $destination = $this->withinCompany($this->company, fn () => ProjectInventory::forceCreate([
             'company_id' => $this->company->id,
             'project_id' => $destinationProject->id,
             'material_id' => $this->inventory->material_id,
             'minimum_stock_level' => 0,
             'created_by' => $this->admin->id,
-        ]);
+        ]));
         $token = $this->admin->createToken('transfer')->plainTextToken;
         $payload = [
             'idempotency_key' => '5ce0be07-2a1b-4bc0-beab-d638144e37cb',
@@ -113,14 +115,9 @@ class MaterialRequestsTest extends TestCase
         $this->withToken($token)->postJson('/api/v1/inventory-transfers', $payload)->assertOk();
 
         $this->assertSame('64.7500', $this->balance());
-        $destinationBalance = (string) InventoryTransaction::where('project_inventory_id', $destination->id)
-            ->selectRaw("coalesce(sum(case when direction='in' then quantity else -quantity end),0) b")
-            ->value('b');
-        $this->assertSame('35.2500', $destinationBalance);
-        $this->assertSame('100.0000', (string) InventoryTransaction::whereIn('project_inventory_id', [$this->inventory->id, $destination->id])
-            ->selectRaw("sum(case when direction='in' then quantity else -quantity end) b")
-            ->value('b'));
-        $pair = InventoryTransaction::whereIn('transaction_type', ['transfer_out', 'transfer_in'])->orderBy('id')->get();
+        $this->assertSame('35.2500', $this->balance($destination->id));
+        $this->assertSame('100.0000', $this->balance($this->inventory->id, $destination->id));
+        $pair = $this->withinCompany($this->company, fn () => InventoryTransaction::whereIn('transaction_type', ['transfer_out', 'transfer_in'])->orderBy('id')->get());
         $this->assertCount(2, $pair);
         $this->assertSame($pair[1]->id, $pair[0]->related_transaction_id);
         $this->assertSame($pair[0]->id, $pair[1]->related_transaction_id);
@@ -144,8 +141,12 @@ class MaterialRequestsTest extends TestCase
         return [$requestId, $itemId, $token];
     }
 
-    private function balance(): string
+    private function balance(int ...$inventoryIds): string
     {
-        return (string) InventoryTransaction::where('project_inventory_id', $this->inventory->id)->selectRaw("sum(case when direction='in' then quantity else -quantity end) b")->value('b');
+        return $this->withinCompany($this->company, fn () => InventoryTransaction::query()
+            ->whereIn('project_inventory_id', $inventoryIds ?: [$this->inventory->id])
+            ->selectRaw("coalesce(sum(case when direction = 'in' then quantity else -quantity end), 0) as balance")
+            ->withCasts(['balance' => 'decimal:4'])
+            ->value('balance'));
     }
 }

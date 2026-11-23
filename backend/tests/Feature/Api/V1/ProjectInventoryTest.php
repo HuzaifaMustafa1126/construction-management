@@ -103,7 +103,7 @@ class ProjectInventoryTest extends TestCase
             $this->withToken($token)->postJson($url, ['quantity' => $quantity, 'transaction_date' => '2026-10-21'])->assertUnprocessable();
         }
         $response = $this->withToken($token)->postJson($url, ['quantity' => '500.125', 'transaction_date' => '2026-10-21', 'notes' => 'Initial'])->assertCreated()->assertJsonPath('data.quantity', '500.125')->assertJsonPath('data.direction', 'in')->assertJsonPath('data.transaction_type', 'opening_stock');
-        $tx = InventoryTransaction::findOrFail($response->json('data.id'));
+        $tx = $this->withinCompany($this->company, fn () => InventoryTransaction::findOrFail($response->json('data.id')));
         $this->assertSame($this->company->id, $tx->company_id);
         $this->assertSame($this->project->id, $tx->project_id);
         $this->assertSame($this->material->id, $tx->material_id);
@@ -158,7 +158,7 @@ class ProjectInventoryTest extends TestCase
     public function test_inventory_events_are_logged_without_secrets(): void
     {
         $response = $this->withToken($this->token($this->admin))->postJson($this->url(), ['material_id' => $this->material->id])->assertCreated();
-        $inventory = ProjectInventory::findOrFail($response->json('data.id'));
+        $inventory = $this->withinCompany($this->company, fn () => ProjectInventory::findOrFail($response->json('data.id')));
         $this->withToken($this->token($this->admin))->postJson($this->itemUrl($inventory).'/opening-stock', ['quantity' => '1.000', 'transaction_date' => '2026-10-21'])->assertCreated();
         $this->withToken($this->token($this->admin))->patchJson($this->itemUrl($inventory), ['minimum_stock_level' => '2.000'])->assertOk();
         $events = DB::table('activity_log')->whereIn('event', ['project_inventory.created', 'inventory.opening_stock_recorded', 'project_inventory.minimum_stock_updated'])->pluck('event')->all();
@@ -178,7 +178,7 @@ class ProjectInventoryTest extends TestCase
 
     private function makeProject(Company $c, User $u, string $code): Project
     {
-        return Project::factory()->for($c)->create(['created_by' => $u->id, 'currency' => $c->currency, 'code' => $code]);
+        return $this->withinCompany($c, fn () => Project::factory()->for($c)->create(['created_by' => $u->id, 'currency' => $c->currency, 'code' => $code]));
     }
 
     private function attach(Project $p, User $u, string $type = 'supervisor'): void
@@ -188,20 +188,22 @@ class ProjectInventoryTest extends TestCase
 
     private function makeMaterial(Company $c, User $u, string $code, int $precision, bool $active = true): Material
     {
-        $unit = MeasurementUnit::forceCreate(['company_id' => $c->id, 'name' => 'Unit '.$code, 'symbol' => 'u'.strtolower($code), 'unit_type' => 'count', 'decimal_precision' => $precision, 'is_system' => false, 'is_active' => true]);
-        $category = MaterialCategory::forceCreate(['company_id' => $c->id, 'name' => 'Category '.$code, 'is_active' => true, 'created_by' => $u->id]);
+        return $this->withinCompany($c, function () use ($c, $u, $code, $precision, $active): Material {
+            $unit = MeasurementUnit::forceCreate(['company_id' => $c->id, 'name' => 'Unit '.$code, 'symbol' => 'u'.strtolower($code), 'unit_type' => 'count', 'decimal_precision' => $precision, 'is_system' => false, 'is_active' => true]);
+            $category = MaterialCategory::forceCreate(['company_id' => $c->id, 'name' => 'Category '.$code, 'is_active' => true, 'created_by' => $u->id]);
 
-        return Material::forceCreate(['company_id' => $c->id, 'material_category_id' => $category->id, 'measurement_unit_id' => $unit->id, 'name' => 'Material '.$code, 'code' => $code, 'is_active' => $active, 'created_by' => $u->id]);
+            return Material::forceCreate(['company_id' => $c->id, 'material_category_id' => $category->id, 'measurement_unit_id' => $unit->id, 'name' => 'Material '.$code, 'code' => $code, 'is_active' => $active, 'created_by' => $u->id]);
+        });
     }
 
     private function inventory(string $minimum = '0', ?Material $material = null): ProjectInventory
     {
-        return ProjectInventory::forceCreate(['company_id' => $this->company->id, 'project_id' => $this->project->id, 'material_id' => ($material ?? $this->material)->id, 'minimum_stock_level' => $minimum, 'created_by' => $this->admin->id]);
+        return $this->withinCompany($this->company, fn () => ProjectInventory::forceCreate(['company_id' => $this->company->id, 'project_id' => $this->project->id, 'material_id' => ($material ?? $this->material)->id, 'minimum_stock_level' => $minimum, 'created_by' => $this->admin->id]));
     }
 
     private function opening(ProjectInventory $i, string $quantity): InventoryTransaction
     {
-        return InventoryTransaction::forceCreate(['company_id' => $i->company_id, 'project_id' => $i->project_id, 'project_inventory_id' => $i->id, 'material_id' => $i->material_id, 'transaction_type' => 'opening_stock', 'quantity' => $quantity, 'direction' => 'in', 'transaction_date' => '2026-10-21', 'created_by' => $this->admin->id]);
+        return $this->withinCompany($this->company, fn () => InventoryTransaction::forceCreate(['company_id' => $i->company_id, 'project_id' => $i->project_id, 'project_inventory_id' => $i->id, 'material_id' => $i->material_id, 'transaction_type' => 'opening_stock', 'quantity' => $quantity, 'direction' => 'in', 'transaction_date' => '2026-10-21', 'created_by' => $this->admin->id]));
     }
 
     private function givePermission(User $u, string $name): void

@@ -70,13 +70,13 @@ class MaterialConsumptionTest extends TestCase
 
     public function test_admin_creates_and_updates_draft_without_changing_stock(): void
     {
-        $before = InventoryTransaction::count();
+        $before = $this->withinCompany($this->company, fn () => InventoryTransaction::count());
         $response = $this->withToken($this->token($this->admin))->postJson($this->url(), $this->payload())->assertCreated()->assertJsonPath('data.status', 'draft')->assertJsonCount(2, 'data.items');
-        $consumption = MaterialConsumption::findOrFail($response->json('data.id'));
+        $consumption = $this->withinCompany($this->company, fn () => MaterialConsumption::findOrFail($response->json('data.id')));
         $this->assertNotEmpty($consumption->consumption_number);
-        $this->assertSame($before, InventoryTransaction::count());
+        $this->assertSame($before, $this->withinCompany($this->company, fn () => InventoryTransaction::count()));
         $this->withToken($this->token($this->admin))->patchJson($this->itemUrl($consumption), ['purpose' => 'Updated', 'items' => [['project_inventory_id' => $this->inventory->id, 'quantity' => '2.125']]])->assertOk()->assertJsonPath('data.purpose', 'Updated');
-        $this->assertSame($before, InventoryTransaction::count());
+        $this->assertSame($before, $this->withinCompany($this->company, fn () => InventoryTransaction::count()));
         $second = $this->draft();
         $this->assertNotSame($consumption->consumption_number, $second->consumption_number);
     }
@@ -115,7 +115,7 @@ class MaterialConsumptionTest extends TestCase
     {
         $consumption = $this->draft([['project_inventory_id' => $this->inventory->id, 'quantity' => '20.125']]);
         $response = $this->withToken($this->token($this->admin))->postJson($this->itemUrl($consumption).'/post')->assertOk()->assertJsonPath('data.status', 'posted')->assertJsonCount(1, 'transaction_ids');
-        $this->assertDatabaseHas('inventory_transactions', ['consumption_item_id' => $consumption->items()->first()->id, 'transaction_type' => 'material_consumed', 'direction' => 'out', 'quantity' => '20.1250']);
+        $this->assertDatabaseHas('inventory_transactions', ['consumption_item_id' => $this->withinCompany($this->company, fn () => $consumption->items()->first()->id), 'transaction_type' => 'material_consumed', 'direction' => 'out', 'quantity' => '20.1250']);
         $this->withToken($this->token($this->admin))->getJson("/api/v1/projects/{$this->project->id}/inventory/{$this->inventory->id}")->assertOk()->assertJsonPath('data.current_stock', '99.875');
         $this->withToken($this->token($this->admin))->postJson($this->itemUrl($consumption).'/post')->assertConflict();
         $this->assertDatabaseCount('inventory_transactions', 4);
@@ -125,9 +125,9 @@ class MaterialConsumptionTest extends TestCase
     public function test_insufficient_stock_rolls_back_every_item_and_never_goes_negative(): void
     {
         $consumption = $this->draft([['project_inventory_id' => $this->inventory->id, 'quantity' => '1.000'], ['project_inventory_id' => $this->inventory2->id, 'quantity' => '11']]);
-        $before = InventoryTransaction::count();
+        $before = $this->withinCompany($this->company, fn () => InventoryTransaction::count());
         $this->withToken($this->token($this->admin))->postJson($this->itemUrl($consumption).'/post')->assertUnprocessable()->assertJsonPath('message', 'Insufficient stock. No material was consumed.');
-        $this->assertSame($before, InventoryTransaction::count());
+        $this->assertSame($before, $this->withinCompany($this->company, fn () => InventoryTransaction::count()));
         $this->assertSame('draft', $consumption->fresh()->status);
         $this->assertNull($consumption->fresh()->posted_at);
     }
@@ -135,10 +135,10 @@ class MaterialConsumptionTest extends TestCase
     public function test_terminal_documents_are_immutable_and_cancel_is_stock_neutral(): void
     {
         $cancelled = $this->draft();
-        $before = InventoryTransaction::count();
+        $before = $this->withinCompany($this->company, fn () => InventoryTransaction::count());
         $this->withToken($this->token($this->admin))->postJson($this->itemUrl($cancelled).'/cancel')->assertOk()->assertJsonPath('data.status', 'cancelled');
         $this->withToken($this->token($this->admin))->patchJson($this->itemUrl($cancelled), ['purpose' => 'No'])->assertConflict();
-        $this->assertSame($before, InventoryTransaction::count());
+        $this->assertSame($before, $this->withinCompany($this->company, fn () => InventoryTransaction::count()));
         $posted = $this->draft([['project_inventory_id' => $this->inventory->id, 'quantity' => '1.000']]);
         $this->withToken($this->token($this->admin))->postJson($this->itemUrl($posted).'/post')->assertOk();
         $this->withToken($this->token($this->admin))->patchJson($this->itemUrl($posted), ['purpose' => 'No'])->assertConflict();
@@ -149,9 +149,9 @@ class MaterialConsumptionTest extends TestCase
     {
         $consumption = $this->draft([['project_inventory_id' => $this->inventory->id, 'quantity' => '1.000']]);
         $this->withToken($this->token($this->admin))->postJson($this->itemUrl($consumption).'/post')->assertOk();
-        $transaction = InventoryTransaction::whereNotNull('consumption_item_id')->firstOrFail();
+        $transaction = $this->withinCompany($this->company, fn () => InventoryTransaction::whereNotNull('consumption_item_id')->firstOrFail());
         $this->expectException(UniqueConstraintViolationException::class);
-        InventoryTransaction::forceCreate($transaction->only(['company_id', 'project_id', 'project_inventory_id', 'material_id', 'consumption_item_id', 'transaction_type', 'quantity', 'direction', 'transaction_date', 'created_by']));
+        $this->withinCompany($this->company, fn () => InventoryTransaction::forceCreate($transaction->only(['company_id', 'project_id', 'project_inventory_id', 'material_id', 'consumption_item_id', 'transaction_type', 'quantity', 'direction', 'transaction_date', 'created_by'])));
     }
 
     public function test_filters_pagination_summary_history_and_activity_are_scoped(): void
@@ -173,7 +173,7 @@ class MaterialConsumptionTest extends TestCase
     {
         $consumption = $this->draft([['project_inventory_id' => $this->inventory->id, 'quantity' => '1.000']]);
         $this->withToken($this->token($this->admin))->postJson($this->itemUrl($consumption).'/post')->assertOk();
-        $this->inventory->material->delete();
+        $this->withinCompany($this->company, fn () => $this->inventory->material->delete());
         $this->withToken($this->token($this->admin))->getJson($this->itemUrl($consumption))->assertOk()->assertJsonPath('data.items.0.material.code', 'CEM');
     }
 
@@ -187,7 +187,7 @@ class MaterialConsumptionTest extends TestCase
 
     private function project(Company $company, User $user, string $code): Project
     {
-        return Project::factory()->for($company)->create(['created_by' => $user->id, 'currency' => $company->currency, 'code' => $code]);
+        return $this->withinCompany($company, fn () => Project::factory()->for($company)->create(['created_by' => $user->id, 'currency' => $company->currency, 'code' => $code]));
     }
 
     private function attach(Project $project, User $user, string $type): void
@@ -197,20 +197,22 @@ class MaterialConsumptionTest extends TestCase
 
     private function material(Company $company, User $user, string $code, int $precision): Material
     {
-        $unit = MeasurementUnit::forceCreate(['company_id' => $company->id, 'name' => 'U'.$code, 'symbol' => strtolower($code), 'unit_type' => 'count', 'decimal_precision' => $precision, 'is_system' => false, 'is_active' => true]);
-        $category = MaterialCategory::forceCreate(['company_id' => $company->id, 'name' => 'C'.$code, 'is_active' => true, 'created_by' => $user->id]);
+        return $this->withinCompany($company, function () use ($company, $user, $code, $precision): Material {
+            $unit = MeasurementUnit::forceCreate(['company_id' => $company->id, 'name' => 'U'.$code, 'symbol' => strtolower($code), 'unit_type' => 'count', 'decimal_precision' => $precision, 'is_system' => false, 'is_active' => true]);
+            $category = MaterialCategory::forceCreate(['company_id' => $company->id, 'name' => 'C'.$code, 'is_active' => true, 'created_by' => $user->id]);
 
-        return Material::forceCreate(['company_id' => $company->id, 'material_category_id' => $category->id, 'measurement_unit_id' => $unit->id, 'name' => 'M'.$code, 'code' => $code, 'is_active' => true, 'created_by' => $user->id]);
+            return Material::forceCreate(['company_id' => $company->id, 'material_category_id' => $category->id, 'measurement_unit_id' => $unit->id, 'name' => 'M'.$code, 'code' => $code, 'is_active' => true, 'created_by' => $user->id]);
+        });
     }
 
     private function inventory(Project $project, Material $material): ProjectInventory
     {
-        return ProjectInventory::forceCreate(['company_id' => $project->company_id, 'project_id' => $project->id, 'material_id' => $material->id, 'minimum_stock_level' => '0', 'created_by' => $project->created_by]);
+        return $this->withinCompany($project->company, fn () => ProjectInventory::forceCreate(['company_id' => $project->company_id, 'project_id' => $project->id, 'material_id' => $material->id, 'minimum_stock_level' => '0', 'created_by' => $project->created_by]));
     }
 
     private function stock(ProjectInventory $inventory, string $quantity, string $type): void
     {
-        InventoryTransaction::forceCreate(['company_id' => $inventory->company_id, 'project_id' => $inventory->project_id, 'project_inventory_id' => $inventory->id, 'material_id' => $inventory->material_id, 'transaction_type' => $type, 'quantity' => $quantity, 'direction' => 'in', 'transaction_date' => '2026-10-20', 'created_by' => $this->admin->id]);
+        $this->withinCompany($inventory->company, fn () => InventoryTransaction::forceCreate(['company_id' => $inventory->company_id, 'project_id' => $inventory->project_id, 'project_inventory_id' => $inventory->id, 'material_id' => $inventory->material_id, 'transaction_type' => $type, 'quantity' => $quantity, 'direction' => 'in', 'transaction_date' => '2026-10-20', 'created_by' => $this->admin->id]));
     }
 
     private function payload(?array $items = null): array
@@ -222,7 +224,7 @@ class MaterialConsumptionTest extends TestCase
     {
         $response = $this->withToken($this->token($this->admin))->postJson($this->url(), $this->payload($items))->assertCreated();
 
-        return MaterialConsumption::findOrFail($response->json('data.id'));
+        return $this->withinCompany($this->company, fn () => MaterialConsumption::findOrFail($response->json('data.id')));
     }
 
     private function token(User $user): string

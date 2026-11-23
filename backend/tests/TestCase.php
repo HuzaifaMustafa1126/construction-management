@@ -2,8 +2,11 @@
 
 namespace Tests;
 
+use App\Models\Company;
 use App\Models\User;
 use App\Support\Authorization\PermissionCatalog;
+use App\Support\Tenancy\TenantContext;
+use Closure;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -11,6 +14,11 @@ use Spatie\Permission\PermissionRegistrar;
 
 abstract class TestCase extends BaseTestCase
 {
+    protected function withinCompany(Company $company, Closure $callback): mixed
+    {
+        return $this->app->make(TenantContext::class)->run($company, $callback);
+    }
+
     protected function grantRole(User $user, string $roleName): Role
     {
         $companyId = (int) $user->company_id;

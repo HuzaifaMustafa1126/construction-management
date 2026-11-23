@@ -69,16 +69,16 @@ class MaterialStockAdjustmentTest extends TestCase
 
     public function test_draft_lifecycle_is_stock_neutral_and_terminal_documents_are_immutable(): void
     {
-        $before = InventoryTransaction::count();
+        $before = $this->withinCompany($this->company, fn () => InventoryTransaction::count());
         $adjustment = $this->draft();
-        $this->assertSame($before, InventoryTransaction::count());
+        $this->assertSame($before, $this->withinCompany($this->company, fn () => InventoryTransaction::count()));
         $token = $this->token($this->admin);
         $this->withToken($token)->patchJson($this->itemUrl($adjustment), ['reason' => 'Updated', 'items' => [$this->item('adjustment_in', '1.2500')]])->assertOk()->assertJsonPath('data.reason', 'Updated');
-        $this->assertSame($before, InventoryTransaction::count());
+        $this->assertSame($before, $this->withinCompany($this->company, fn () => InventoryTransaction::count()));
         $this->withToken($token)->postJson($this->itemUrl($adjustment).'/cancel')->assertOk()->assertJsonPath('data.status', 'cancelled');
         $this->withToken($token)->patchJson($this->itemUrl($adjustment), ['reason' => 'No'])->assertConflict();
         $this->withToken($token)->postJson($this->itemUrl($adjustment).'/post')->assertConflict();
-        $this->assertSame($before, InventoryTransaction::count());
+        $this->assertSame($before, $this->withinCompany($this->company, fn () => InventoryTransaction::count()));
     }
 
     public function test_all_five_types_map_to_correct_immutable_ledger_directions(): void
@@ -93,7 +93,7 @@ class MaterialStockAdjustmentTest extends TestCase
             }
             $adjustment = $this->draft([$item]);
             $this->withToken($this->token($this->admin))->postJson($this->itemUrl($adjustment).'/post')->assertOk();
-            $this->assertDatabaseHas('inventory_transactions', ['stock_adjustment_item_id' => $adjustment->items()->first()->id, 'transaction_type' => $type, 'direction' => $direction, 'quantity' => '1.0000']);
+            $this->assertDatabaseHas('inventory_transactions', ['stock_adjustment_item_id' => $this->withinCompany($this->company, fn () => $adjustment->items()->first()->id), 'transaction_type' => $type, 'direction' => $direction, 'quantity' => '1.0000']);
         }
         $this->assertSame('posted', $adjustment->fresh()->status);
         $this->withToken($this->token($this->admin))->patchJson($this->itemUrl($adjustment), ['reason' => 'No'])->assertConflict();
@@ -104,14 +104,14 @@ class MaterialStockAdjustmentTest extends TestCase
     public function test_outgoing_stock_is_checked_atomically_and_never_becomes_negative(): void
     {
         $adjustment = $this->draft([$this->item('material_wastage', '20.0001')]);
-        $before = InventoryTransaction::count();
+        $before = $this->withinCompany($this->company, fn () => InventoryTransaction::count());
         $this->withToken($this->token($this->admin))->postJson($this->itemUrl($adjustment).'/post')->assertUnprocessable()->assertJsonPath('message', 'Insufficient stock. No adjustment was posted.');
-        $this->assertSame($before, InventoryTransaction::count());
+        $this->assertSame($before, $this->withinCompany($this->company, fn () => InventoryTransaction::count()));
         $this->assertSame('draft', $adjustment->fresh()->status);
         $multi = $this->draft([$this->item('adjustment_out', '1.0000'), ['project_inventory_id' => $this->inventory2->id, 'adjustment_type' => 'material_wastage', 'quantity' => '11', 'reason_code' => 'damage']]);
         $this->withToken($this->token($this->admin))->postJson($this->itemUrl($multi).'/post')->assertUnprocessable();
         $this->assertSame('draft', $multi->fresh()->status);
-        $this->assertDatabaseMissing('inventory_transactions', ['stock_adjustment_item_id' => $multi->items()->first()->id]);
+        $this->assertDatabaseMissing('inventory_transactions', ['stock_adjustment_item_id' => $this->withinCompany($this->company, fn () => $multi->items()->first()->id)]);
     }
 
     public function test_correction_reference_rules_reject_missing_cross_tenant_and_wrong_inventory(): void
@@ -123,7 +123,7 @@ class MaterialStockAdjustmentTest extends TestCase
         $this->withToken($token)->postJson($this->url(), $this->payload([$missing]))->assertUnprocessable()->assertJsonValidationErrors(['items.0.reference_inventory_transaction_id', 'items.0.correction_explanation']);
         $cross = array_merge($missing, ['reference_inventory_transaction_id' => $foreignTx->id, 'correction_explanation' => 'Correction']);
         $this->withToken($token)->postJson($this->url(), $this->payload([$cross]))->assertUnprocessable()->assertJsonValidationErrors('items.0.reference_inventory_transaction_id');
-        $wrong = array_merge($missing, ['reference_inventory_transaction_id' => InventoryTransaction::where('project_inventory_id', $this->inventory2->id)->firstOrFail()->id, 'correction_explanation' => 'Correction']);
+        $wrong = array_merge($missing, ['reference_inventory_transaction_id' => $this->withinCompany($this->company, fn () => InventoryTransaction::where('project_inventory_id', $this->inventory2->id)->firstOrFail()->id), 'correction_explanation' => 'Correction']);
         $this->withToken($token)->postJson($this->url(), $this->payload([$wrong]))->assertUnprocessable()->assertJsonValidationErrors('items.0.reference_inventory_transaction_id');
         $nonCorrection = array_merge($this->item('adjustment_in', '1.0000'), ['reference_inventory_transaction_id' => $this->opening->id]);
         $this->withToken($token)->postJson($this->url(), $this->payload([$nonCorrection]))->assertUnprocessable();
@@ -147,7 +147,7 @@ class MaterialStockAdjustmentTest extends TestCase
     public function test_permissions_project_assignment_clients_and_tenant_hiding_are_enforced(): void
     {
         $this->withToken($this->token($this->supervisor))->postJson($this->url(), $this->payload())->assertCreated();
-        $adjustment = MaterialStockAdjustment::latest('id')->firstOrFail();
+        $adjustment = $this->withinCompany($this->company, fn () => MaterialStockAdjustment::latest('id')->firstOrFail());
         $this->withToken($this->token($this->supervisor))->postJson($this->itemUrl($adjustment).'/post')->assertForbidden();
         $this->app['auth']->forgetGuards();
         $this->withToken($this->token($this->unassigned))->getJson($this->url())->assertNotFound();
@@ -168,9 +168,9 @@ class MaterialStockAdjustmentTest extends TestCase
         $this->withToken($token)->postJson($this->itemUrl($adjustment).'/post')->assertOk();
         $this->withToken($token)->postJson($this->itemUrl($adjustment).'/post')->assertConflict();
         $this->assertDatabaseCount('inventory_transactions', 3);
-        $transaction = InventoryTransaction::whereNotNull('stock_adjustment_item_id')->firstOrFail();
+        $transaction = $this->withinCompany($this->company, fn () => InventoryTransaction::whereNotNull('stock_adjustment_item_id')->firstOrFail());
         $this->expectException(UniqueConstraintViolationException::class);
-        InventoryTransaction::forceCreate($transaction->only(['company_id', 'project_id', 'project_inventory_id', 'material_id', 'stock_adjustment_item_id', 'transaction_type', 'quantity', 'direction', 'transaction_date', 'created_by']));
+        $this->withinCompany($this->company, fn () => InventoryTransaction::forceCreate($transaction->only(['company_id', 'project_id', 'project_inventory_id', 'material_id', 'stock_adjustment_item_id', 'transaction_type', 'quantity', 'direction', 'transaction_date', 'created_by'])));
     }
 
     public function test_list_history_summary_decimal_balance_and_activity_logs_are_correct(): void
@@ -198,7 +198,7 @@ class MaterialStockAdjustmentTest extends TestCase
 
     private function project(Company $company, User $user, string $code): Project
     {
-        return Project::factory()->for($company)->create(['created_by' => $user->id, 'currency' => $company->currency, 'code' => $code]);
+        return $this->withinCompany($company, fn () => Project::factory()->for($company)->create(['created_by' => $user->id, 'currency' => $company->currency, 'code' => $code]));
     }
 
     private function attach(Project $project, User $user, string $type): void
@@ -208,20 +208,22 @@ class MaterialStockAdjustmentTest extends TestCase
 
     private function material(Company $company, User $user, string $code, int $precision): Material
     {
-        $unit = MeasurementUnit::forceCreate(['company_id' => $company->id, 'name' => 'U'.$code, 'symbol' => strtolower($code), 'unit_type' => 'count', 'decimal_precision' => $precision, 'is_system' => false, 'is_active' => true]);
-        $category = MaterialCategory::forceCreate(['company_id' => $company->id, 'name' => 'C'.$code, 'is_active' => true, 'created_by' => $user->id]);
+        return $this->withinCompany($company, function () use ($company, $user, $code, $precision): Material {
+            $unit = MeasurementUnit::forceCreate(['company_id' => $company->id, 'name' => 'U'.$code, 'symbol' => strtolower($code), 'unit_type' => 'count', 'decimal_precision' => $precision, 'is_system' => false, 'is_active' => true]);
+            $category = MaterialCategory::forceCreate(['company_id' => $company->id, 'name' => 'C'.$code, 'is_active' => true, 'created_by' => $user->id]);
 
-        return Material::forceCreate(['company_id' => $company->id, 'material_category_id' => $category->id, 'measurement_unit_id' => $unit->id, 'name' => 'M'.$code, 'code' => $code, 'is_active' => true, 'created_by' => $user->id]);
+            return Material::forceCreate(['company_id' => $company->id, 'material_category_id' => $category->id, 'measurement_unit_id' => $unit->id, 'name' => 'M'.$code, 'code' => $code, 'is_active' => true, 'created_by' => $user->id]);
+        });
     }
 
     private function inventory(Project $project, Material $material): ProjectInventory
     {
-        return ProjectInventory::forceCreate(['company_id' => $project->company_id, 'project_id' => $project->id, 'material_id' => $material->id, 'minimum_stock_level' => '0', 'created_by' => $project->created_by]);
+        return $this->withinCompany($project->company, fn () => ProjectInventory::forceCreate(['company_id' => $project->company_id, 'project_id' => $project->id, 'material_id' => $material->id, 'minimum_stock_level' => '0', 'created_by' => $project->created_by]));
     }
 
     private function stock(ProjectInventory $inventory, string $quantity, string $type, string $direction, ?User $actor = null): InventoryTransaction
     {
-        return InventoryTransaction::forceCreate(['company_id' => $inventory->company_id, 'project_id' => $inventory->project_id, 'project_inventory_id' => $inventory->id, 'material_id' => $inventory->material_id, 'transaction_type' => $type, 'quantity' => $quantity, 'direction' => $direction, 'transaction_date' => '2026-10-24', 'created_by' => ($actor ?? $this->admin)->id]);
+        return $this->withinCompany($inventory->company, fn () => InventoryTransaction::forceCreate(['company_id' => $inventory->company_id, 'project_id' => $inventory->project_id, 'project_inventory_id' => $inventory->id, 'material_id' => $inventory->material_id, 'transaction_type' => $type, 'quantity' => $quantity, 'direction' => $direction, 'transaction_date' => '2026-10-24', 'created_by' => ($actor ?? $this->admin)->id]));
     }
 
     private function item(string $type = 'adjustment_in', string $quantity = '1.0000'): array
@@ -238,7 +240,7 @@ class MaterialStockAdjustmentTest extends TestCase
     {
         $response = $this->withToken($this->token($this->admin))->postJson($this->url(), $this->payload($items))->assertCreated();
 
-        return MaterialStockAdjustment::findOrFail($response->json('data.id'));
+        return $this->withinCompany($this->company, fn () => MaterialStockAdjustment::findOrFail($response->json('data.id')));
     }
 
     private function token(User $user): string

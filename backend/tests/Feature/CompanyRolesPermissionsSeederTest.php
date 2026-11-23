@@ -15,7 +15,7 @@ class CompanyRolesPermissionsSeederTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_company_roles_permissions_seeder_is_idempotent_and_bootstraps_only_verified_admins(): void
+    public function test_company_roles_permissions_seeder_is_idempotent_and_does_not_assign_users(): void
     {
         Company::factory()->create(['id' => 1]);
         Company::factory()->create(['id' => 2]);
@@ -33,8 +33,14 @@ class CompanyRolesPermissionsSeederTest extends TestCase
         $this->assertSame($counts['roles'], \DB::table('roles')->count());
         $this->assertSame($counts['permissions'], \DB::table('permissions')->count());
         $this->assertSame($counts['assignments'], \DB::table('model_has_roles')->count());
-        $this->assertSame(6, $counts['roles']);
-        $this->assertSame(2, $counts['assignments']);
+        $catalogRoles = array_keys(PermissionCatalog::ROLE_PERMISSIONS);
+        foreach ([1, 2] as $companyId) {
+            $this->assertEqualsCanonicalizing($catalogRoles, Role::query()
+                ->where('company_id', $companyId)->where('guard_name', 'web')->pluck('name')->all());
+        }
+        $this->assertSame(2 * count($catalogRoles), $counts['roles']);
+        $this->assertSame(count(PermissionCatalog::all()), $counts['permissions']);
+        $this->assertSame(0, $counts['assignments']);
     }
 
     public function test_seeder_adds_department_permissions_without_changing_custom_role_permissions(): void

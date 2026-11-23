@@ -116,7 +116,7 @@ class InventoryReportingTest extends TestCase
 
     public function test_movements_support_filters_pagination_sources_and_archived_materials(): void
     {
-        $this->inventory->material->delete();
+        $this->withinCompany($this->company, fn () => $this->inventory->material->delete());
         $response = $this->getReport('movements?transaction_type=material_wastage&direction=out&start_date=2026-10-05&end_date=2026-10-05&per_page=1')->assertOk()->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.material.code', 'CEM')->assertJsonPath('data.0.source_document_type', 'stock_adjustment')->assertJsonPath('data.0.reason', 'damage');
         $this->getReport("movements?material_id={$this->inventory->material_id}")->assertOk()->assertJsonPath('meta.total', 8);
         $this->getReport('movements?source_document=opening_stock')->assertOk()->assertJsonPath('data.0.transaction_type', 'opening_stock');
@@ -170,8 +170,8 @@ class InventoryReportingTest extends TestCase
         $this->tx($this->inventory, 'material_consumed', '2.0000', 'out', '2026-10-02');
         $this->tx($this->inventory, 'adjustment_in', '1.0000', 'in', '2026-10-03');
         $this->tx($this->inventory, 'adjustment_out', '0.5000', 'out', '2026-10-04');
-        $adjustment = MaterialStockAdjustment::forceCreate(['company_id' => $this->company->id, 'project_id' => $this->project->id, 'adjustment_number' => 'ADJ-REPORT', 'status' => 'posted', 'adjustment_date' => '2026-10-05', 'created_by' => $this->admin->id, 'posted_by' => $this->admin->id, 'posted_at' => now()]);
-        $item = MaterialStockAdjustmentItem::forceCreate(['company_id' => $this->company->id, 'material_stock_adjustment_id' => $adjustment->id, 'project_inventory_id' => $this->inventory->id, 'material_id' => $this->inventory->material_id, 'adjustment_type' => 'material_wastage', 'quantity' => '0.2500', 'reason_code' => 'damage']);
+        $adjustment = $this->withinCompany($this->company, fn () => MaterialStockAdjustment::forceCreate(['company_id' => $this->company->id, 'project_id' => $this->project->id, 'adjustment_number' => 'ADJ-REPORT', 'status' => 'posted', 'adjustment_date' => '2026-10-05', 'created_by' => $this->admin->id, 'posted_by' => $this->admin->id, 'posted_at' => now()]));
+        $item = $this->withinCompany($this->company, fn () => MaterialStockAdjustmentItem::forceCreate(['company_id' => $this->company->id, 'material_stock_adjustment_id' => $adjustment->id, 'project_inventory_id' => $this->inventory->id, 'material_id' => $this->inventory->material_id, 'adjustment_type' => 'material_wastage', 'quantity' => '0.2500', 'reason_code' => 'damage']));
         $this->tx($this->inventory, 'material_wastage', '0.2500', 'out', '2026-10-05', null, ['stock_adjustment_item_id' => $item->id]);
         $this->tx($this->inventory, 'inventory_correction_in', '0.1000', 'in', '2026-10-06');
         $this->tx($this->inventory, 'inventory_correction_out', '0.0500', 'out', '2026-10-07');
@@ -188,7 +188,7 @@ class InventoryReportingTest extends TestCase
 
     private function project(Company $company, User $user, string $code): Project
     {
-        return Project::factory()->for($company)->create(['created_by' => $user->id, 'currency' => $company->currency, 'code' => $code]);
+        return $this->withinCompany($company, fn () => Project::factory()->for($company)->create(['created_by' => $user->id, 'currency' => $company->currency, 'code' => $code]));
     }
 
     private function attach(Project $project, User $user, string $type): void
@@ -198,20 +198,22 @@ class InventoryReportingTest extends TestCase
 
     private function material(Company $company, User $user, string $code, int $precision): Material
     {
-        $unit = MeasurementUnit::forceCreate(['company_id' => $company->id, 'name' => 'U'.$code, 'symbol' => strtolower($code), 'unit_type' => 'count', 'decimal_precision' => $precision, 'is_system' => false, 'is_active' => true]);
-        $category = MaterialCategory::forceCreate(['company_id' => $company->id, 'name' => 'C'.$code, 'is_active' => true, 'created_by' => $user->id]);
+        return $this->withinCompany($company, function () use ($company, $user, $code, $precision): Material {
+            $unit = MeasurementUnit::forceCreate(['company_id' => $company->id, 'name' => 'U'.$code, 'symbol' => strtolower($code), 'unit_type' => 'count', 'decimal_precision' => $precision, 'is_system' => false, 'is_active' => true]);
+            $category = MaterialCategory::forceCreate(['company_id' => $company->id, 'name' => 'C'.$code, 'is_active' => true, 'created_by' => $user->id]);
 
-        return Material::forceCreate(['company_id' => $company->id, 'material_category_id' => $category->id, 'measurement_unit_id' => $unit->id, 'name' => 'M'.$code, 'code' => $code, 'is_active' => true, 'created_by' => $user->id]);
+            return Material::forceCreate(['company_id' => $company->id, 'material_category_id' => $category->id, 'measurement_unit_id' => $unit->id, 'name' => 'M'.$code, 'code' => $code, 'is_active' => true, 'created_by' => $user->id]);
+        });
     }
 
     private function inventory(Project $project, Material $material, string $minimum): ProjectInventory
     {
-        return ProjectInventory::forceCreate(['company_id' => $project->company_id, 'project_id' => $project->id, 'material_id' => $material->id, 'minimum_stock_level' => $minimum, 'created_by' => $project->created_by]);
+        return $this->withinCompany($project->company, fn () => ProjectInventory::forceCreate(['company_id' => $project->company_id, 'project_id' => $project->id, 'material_id' => $material->id, 'minimum_stock_level' => $minimum, 'created_by' => $project->created_by]));
     }
 
     private function tx(ProjectInventory $inventory, string $type, string $quantity, string $direction, string $date, ?User $actor = null, array $extra = []): InventoryTransaction
     {
-        return InventoryTransaction::forceCreate(array_merge(['company_id' => $inventory->company_id, 'project_id' => $inventory->project_id, 'project_inventory_id' => $inventory->id, 'material_id' => $inventory->material_id, 'transaction_type' => $type, 'quantity' => $quantity, 'direction' => $direction, 'transaction_date' => $date, 'created_by' => ($actor ?? $this->admin)->id], $extra));
+        return $this->withinCompany($inventory->company, fn () => InventoryTransaction::forceCreate(array_merge(['company_id' => $inventory->company_id, 'project_id' => $inventory->project_id, 'project_inventory_id' => $inventory->id, 'material_id' => $inventory->material_id, 'transaction_type' => $type, 'quantity' => $quantity, 'direction' => $direction, 'transaction_date' => $date, 'created_by' => ($actor ?? $this->admin)->id], $extra)));
     }
 
     private function token(User $user): string

@@ -283,9 +283,9 @@ class ProjectManagementTest extends TestCase
 
     private function project(Company $company, User $creator, array $attributes = []): Project
     {
-        return Project::factory()->for($company)->create(array_merge([
+        return $this->withinCompany($company, fn () => Project::factory()->for($company)->create(array_merge([
             'name' => 'Project', 'created_by' => $creator->id, 'currency' => $company->currency,
-        ], $attributes));
+        ], $attributes)));
     }
 
     private function attach(Project $project, User $user, string $type): void

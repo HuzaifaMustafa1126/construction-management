@@ -57,7 +57,7 @@ class SitePhotosTest extends TestCase
         foreach ([$this->admin, $this->supervisor] as $user) {
             $response = $this->withToken($this->token($user))->post($this->url(), $this->payload('unsafe/../../shell.php.jpg'))
                 ->assertCreated()->assertJsonPath('data.approval_status', 'pending')->assertJsonPath('data.is_client_visible', false);
-            $photo = SitePhoto::findOrFail($response->json('data.id'));
+            $photo = $this->withinCompany($this->company, fn () => SitePhoto::findOrFail($response->json('data.id')));
             $this->assertSame($this->company->id, $photo->company_id);
             $this->assertSame($this->project->id, $photo->project_id);
             $this->assertSame($user->id, $photo->uploaded_by);
@@ -142,17 +142,17 @@ class SitePhotosTest extends TestCase
         $token = $this->token($this->admin);
         $this->withToken($token)->postJson($this->url()."/{$photo->id}/review", ['action' => 'reject'])->assertUnprocessable()->assertJsonValidationErrors('review_notes');
         $this->withToken($token)->postJson($this->url()."/{$photo->id}/review", ['action' => 'reject', 'review_notes' => 'Blurred'])->assertOk()->assertJsonPath('data.approval_status', 'rejected');
-        $foreignReport = DailySiteReport::factory()->create(['company_id' => $this->otherCompany->id, 'project_id' => $this->foreignProject->id, 'created_by' => $this->foreignAdmin->id]);
+        $foreignReport = $this->withinCompany($this->otherCompany, fn () => DailySiteReport::factory()->create(['company_id' => $this->otherCompany->id, 'project_id' => $this->foreignProject->id, 'created_by' => $this->foreignAdmin->id]));
         $this->withToken($token)->post($this->url(), array_merge($this->payload(), ['daily_site_report_id' => $foreignReport->id]))->assertUnprocessable()->assertJsonValidationErrors('daily_site_report_id');
     }
 
     public function test_daily_report_photo_listing_requires_visible_report_for_client_and_logs_are_safe(): void
     {
-        $report = DailySiteReport::factory()->create(['company_id' => $this->company->id, 'project_id' => $this->project->id, 'created_by' => $this->admin->id, 'status' => 'approved', 'is_client_visible' => false]);
+        $report = $this->withinCompany($this->company, fn () => DailySiteReport::factory()->create(['company_id' => $this->company->id, 'project_id' => $this->project->id, 'created_by' => $this->admin->id, 'status' => 'approved', 'is_client_visible' => false]));
         $photo = $this->photo(['daily_site_report_id' => $report->id, 'approval_status' => 'approved', 'is_client_visible' => true]);
         $url = "/api/v1/projects/{$this->project->id}/daily-reports/{$report->id}/photos";
         $this->withToken($this->token($this->client))->getJson($url)->assertNotFound();
-        $report->forceFill(['is_client_visible' => true])->save();
+        $this->withinCompany($this->company, fn () => $report->forceFill(['is_client_visible' => true])->save());
         $this->app['auth']->forgetGuards();
         $this->withToken($this->token($this->client))->getJson($url)->assertOk()->assertJsonPath('data.0.id', $photo->id);
         $this->app['auth']->forgetGuards();
@@ -173,7 +173,7 @@ class SitePhotosTest extends TestCase
 
     private function makeProject(Company $c, User $u, string $code): Project
     {
-        return Project::factory()->for($c)->create(['created_by' => $u->id, 'currency' => $c->currency, 'code' => $code]);
+        return $this->withinCompany($c, fn () => Project::factory()->for($c)->create(['created_by' => $u->id, 'currency' => $c->currency, 'code' => $code]));
     }
 
     private function attach(Project $p, User $u, string $type): void
@@ -203,7 +203,7 @@ class SitePhotosTest extends TestCase
         $path = "companies/{$this->company->id}/projects/{$this->project->id}/site-photos/{$name}";
         Storage::disk('local')->putFileAs(dirname($path), $file, $name);
 
-        return SitePhoto::forceCreate(array_merge(['company_id' => $this->company->id, 'project_id' => $this->project->id, 'uploaded_by' => $this->admin->id, 'photo_date' => '2026-10-20', 'time_category' => 'morning', 'original_filename' => 'stored.png', 'stored_filename' => $name, 'storage_disk' => 'local', 'storage_path' => $path, 'mime_type' => 'image/png', 'file_size' => 68, 'approval_status' => 'pending', 'is_client_visible' => false], $attributes));
+        return $this->withinCompany($this->company, fn () => SitePhoto::forceCreate(array_merge(['company_id' => $this->company->id, 'project_id' => $this->project->id, 'uploaded_by' => $this->admin->id, 'photo_date' => '2026-10-20', 'time_category' => 'morning', 'original_filename' => 'stored.png', 'stored_filename' => $name, 'storage_disk' => 'local', 'storage_path' => $path, 'mime_type' => 'image/png', 'file_size' => 68, 'approval_status' => 'pending', 'is_client_visible' => false], $attributes)));
     }
 
     private function imageFile(string $name, ?int $bytes = null): UploadedFile

@@ -77,10 +77,14 @@ class AttachmentService
     {
         abort_if($inline && ! in_array($attachment->mime_type, Attachment::IMAGE_TYPES, true), 415, 'Only images can be previewed.');
 
+        $filename = $attachment->file_name;
+        $fallback = preg_match('/^[\x20-\x7e]+$/D', $filename) === 1
+            ? $filename
+            : 'attachment-'.$attachment->id.'.'.pathinfo($filename, PATHINFO_EXTENSION);
         $disposition = HeaderUtils::makeDisposition(
             $inline ? HeaderUtils::DISPOSITION_INLINE : HeaderUtils::DISPOSITION_ATTACHMENT,
-            $attachment->file_name,
-            'attachment-'.basename($attachment->file_path),
+            $filename,
+            $fallback,
         );
 
         try {

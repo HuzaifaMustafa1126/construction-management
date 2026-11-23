@@ -68,6 +68,6 @@ class SupplierTest extends TestCase
 
     private function supplier(Company $c, User $u): Supplier
     {
-        return Supplier::forceCreate(['company_id' => $c->id, 'name' => 'Supplier', 'is_active' => true, 'created_by' => $u->id]);
+        return $this->withinCompany($c, fn () => Supplier::forceCreate(['company_id' => $c->id, 'name' => 'Supplier', 'is_active' => true, 'created_by' => $u->id]));
     }
 }
