@@ -10,7 +10,10 @@ use Illuminate\Validation\ValidationException;
 
 class TaskService
 {
-    public function __construct(private readonly ProgressService $progress) {}
+    public function __construct(
+        private readonly ProgressService $progress,
+        private readonly TaskActivityService $activity,
+    ) {}
 
     public function create(Project $project, User $creator, array $attributes): Task
     {
@@ -36,13 +39,19 @@ class TaskService
     public function delete(Project $project, Task $task, User $actor): void
     {
         $this->progress->withLockedProject($project, function (Project $project) use ($task, $actor): void {
-            $project->tasks()->lockForUpdate()->findOrFail($task->id)->delete();
+            $task = $project->tasks()->lockForUpdate()->findOrFail($task->id);
+            $deleted = $task->delete();
             $this->progress->recalculateProject($project, $actor);
+
+            if ($deleted) {
+                $this->activity->recordDeletion($task, $actor);
+            }
         });
     }
 
     private function save(Project $project, Task $task, array $attributes, User $actor): Task
     {
+        $before = $task->exists ? $this->activity->snapshot($task) : null;
         $wasCompleted = $task->status === 'completed';
         $task->fill($attributes);
         $this->validateRelationships($project, $task, array_key_exists('assigned_to', $attributes));
@@ -61,10 +70,14 @@ class TaskService
             }
         }
 
-        $task->save();
+        $saved = $task->save();
 
         if ($task->wasRecentlyCreated || $task->wasChanged(['phase_id', 'status', 'progress_percentage'])) {
             $this->progress->recalculateProject($project, $actor);
+        }
+
+        if ($saved) {
+            $this->activity->recordSave($task, $actor, $before);
         }
 
         return $task;

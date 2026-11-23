@@ -147,6 +147,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('/projects/{id}/tasks', [TaskController::class, 'index'])->whereNumber('id');
                 Route::post('/projects/{id}/tasks', [TaskController::class, 'store'])->whereNumber('id');
                 Route::get('/tasks', [TaskController::class, 'index']);
+                Route::get('/tasks/{taskId}/activity', [TaskController::class, 'activity'])->whereNumber('taskId');
                 Route::get('/tasks/{taskId}', [TaskController::class, 'show'])->whereNumber('taskId');
                 Route::match(['put', 'patch'], '/tasks/{taskId}', [TaskController::class, 'update'])->whereNumber('taskId');
                 Route::delete('/tasks/{taskId}', [TaskController::class, 'destroy'])->whereNumber('taskId');

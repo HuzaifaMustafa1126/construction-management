@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\ListTaskActivityRequest;
 use App\Http\Requests\Api\V1\ListTasksRequest;
 use App\Http\Requests\Api\V1\StoreTaskRequest;
 use App\Http\Requests\Api\V1\TaskRequest;
 use App\Http\Requests\Api\V1\UpdateTaskRequest;
 use App\Http\Requests\Api\V1\UpdateTaskStatusRequest;
+use App\Http\Resources\Api\V1\TaskActivityResource;
 use App\Http\Resources\Api\V1\TaskResource;
 use App\Models\Task;
+use App\Services\TaskActivityService;
 use App\Services\TaskService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -51,6 +54,11 @@ class TaskController extends Controller
             ->withQueryString();
 
         return TaskResource::collection($page);
+    }
+
+    public function activity(ListTaskActivityRequest $request, TaskActivityService $activity): AnonymousResourceCollection
+    {
+        return TaskActivityResource::collection($activity->paginate($request->task, (int) $request->validated('per_page', 15)));
     }
 
     public function store(StoreTaskRequest $request): JsonResponse
