@@ -1,0 +1,138 @@
+.project-schedule {
+  container-type: inline-size;
+}
+
+.project-schedule-sections {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-5);
+  overflow-wrap: anywhere;
+}
+
+@container (min-width: 54rem) {
+  .project-schedule-sections {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.project-schedule :is(.schedule-phase-list, .schedule-milestone-list) {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.schedule-phase {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-nested);
+}
+
+.schedule-milestone-list {
+  border-inline-start: 1px solid var(--color-border);
+}
+
+.schedule-milestone {
+  position: relative;
+  padding-inline-start: var(--space-4);
+}
+
+.schedule-milestone::before {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-start: calc(var(--space-1) * -1);
+  inline-size: var(--space-2);
+  block-size: var(--space-2);
+  border-radius: 50%;
+  background: var(--color-primary);
+  content: "";
+}
+
+.schedule-item-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.schedule-item-heading h3 {
+  margin: 0;
+  font-size: var(--text-card);
+  font-weight: var(--weight-semibold);
+  line-height: var(--line-heading);
+}
+
+.schedule-description,
+.schedule-phase-name {
+  margin: var(--space-2) 0 0;
+}
+
+.schedule-phase-name,
+.schedule-dates,
+.schedule-progress span {
+  color: var(--color-text-muted);
+  font-size: var(--text-helper);
+}
+
+.schedule-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-3) 0 0;
+}
+
+.schedule-dates dd {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.schedule-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-start: var(--space-3);
+}
+
+.schedule-progress progress {
+  flex: 1;
+  min-inline-size: 0;
+  block-size: var(--space-2);
+  accent-color: var(--color-primary);
+}
+
+.schedule-phase-actions,
+.schedule-milestone-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block-start: var(--space-3);
+}
+
+.schedule-delete-message,
+.schedule-milestone-confirm {
+  overflow-wrap: anywhere;
+}
+
+.schedule-confirm-error {
+  display: block;
+  margin-block-start: var(--space-2);
+  color: var(--color-danger);
+}
+
+.schedule-phase-editor {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.schedule-phase-order-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-block: var(--space-2);
+  border-block-end: 1px solid var(--color-border);
+}

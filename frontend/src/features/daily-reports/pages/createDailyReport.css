@@ -30,6 +30,9 @@
   align-items: start;
   gap: var(--space-4);
 }
+.daily-report-issues-and-delays {
+  grid-template-columns: minmax(0, 1fr);
+}
 .daily-report-sectioned-form .app-field,
 .daily-report-span {
   min-width: 0;

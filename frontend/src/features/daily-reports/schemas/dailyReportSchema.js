@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const REPORT_STATUSES = ["draft", "submitted", "approved", "changes_required"];
 export const WORKER_TYPES = ["mason", "helper", "electrician", "plumber", "carpenter", "painter", "steel_fixer", "operator", "other"];
-const optionalText = (max) => z.string().max(max).optional();
+const optionalText = (max) => z.string().max(max).nullish();
 
 export const dailyReportSchema = z.object({
   project_id: z.string().min(1, "Project is required."),

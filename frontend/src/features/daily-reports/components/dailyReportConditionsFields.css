@@ -1,0 +1,7 @@
+.daily-report-delay-select {
+  min-width: 0;
+}
+
+.daily-report-delay-select.full .search-select-control > input {
+  height: max(var(--textarea-min-height), calc(4lh + 2 * var(--space-2) + 2px));
+}

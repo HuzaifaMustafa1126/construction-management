@@ -147,6 +147,28 @@ export const projectsApi = {
     api.put(`/v1/projects/${id}/team`, { members }).then((r) => unwrap(r)),
   overview: (id) =>
     api.get(`/v1/projects/${id}/overview`).then((r) => unwrap(r)),
+  phases: (id, signal) =>
+    api.get(`/v1/projects/${id}/phases`, { signal }).then((r) => unwrap(r)),
+  createPhase: (id, payload) =>
+    api.post(`/v1/projects/${id}/phases`, payload).then((r) => unwrap(r)),
+  updatePhase: (id, phaseId, payload) =>
+    api.patch(`/v1/projects/${id}/phases/${phaseId}`, payload).then((r) => unwrap(r)),
+  deletePhase: (id, phaseId) =>
+    api.delete(`/v1/projects/${id}/phases/${phaseId}`).then(() => undefined),
+  applyDefaultPhases: (id) =>
+    api.post(`/v1/projects/${id}/phases/apply-defaults`).then((r) => unwrap(r)),
+  reorderPhases: (id, phaseIds) =>
+    api.patch(`/v1/projects/${id}/phases/reorder`, { phase_ids: phaseIds }).then((r) => unwrap(r)),
+  milestones: (id, signal) =>
+    api.get(`/v1/projects/${id}/milestones`, { signal }).then((r) => unwrap(r)),
+  milestone: (id, milestoneId, signal) =>
+    api.get(`/v1/projects/${id}/milestones/${milestoneId}`, { signal }).then((r) => unwrap(r)),
+  createMilestone: (id, payload) =>
+    api.post(`/v1/projects/${id}/milestones`, payload).then((r) => unwrap(r)),
+  updateMilestone: (id, milestoneId, payload) =>
+    api.patch(`/v1/projects/${id}/milestones/${milestoneId}`, payload).then((r) => unwrap(r)),
+  deleteMilestone: (id, milestoneId) =>
+    api.delete(`/v1/projects/${id}/milestones/${milestoneId}`).then(() => undefined),
 };
 
 export function pageData(value) {

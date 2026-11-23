@@ -9,6 +9,7 @@ import {
 } from "../../../components/ui/Controls";
 import { apiMessage } from "../../../api/endpoints";
 import { useAuth } from "../../auth/context/AuthContext";
+import ProjectScheduleTab from "../components/ProjectScheduleTab";
 import ProjectStatusBadge from "../components/ProjectStatusBadge";
 import ProjectTeamManager from "../components/ProjectTeamManager";
 import {
@@ -42,6 +43,8 @@ export default function ProjectDetailsPage() {
       </AppAlert>
     );
   const project = query.data;
+  const canViewSchedule = can("projects.view");
+  const activeTab = tab === "Schedule" && !canViewSchedule ? "Overview" : tab;
 
   return (
     <div className="phase2-page">
@@ -63,22 +66,24 @@ export default function ProjectDetailsPage() {
       />
       <div style={{ marginBottom: "10px" }}>
         <TabNavigation
-          items={["Overview", "Team"]}
-          active={tab}
+          items={canViewSchedule ? ["Overview", "Team", "Schedule"] : ["Overview", "Team"]}
+          active={activeTab}
           onChange={setTab}
         />
       </div>
 
-      {tab === "Team" ? (
+      {activeTab === "Team" && (
         <SectionCard title="Project team">
           <ProjectTeamManager
             projectId={id}
             canManage={can("projects.assign")}
           />
         </SectionCard>
-      ) : (
+      )}
+      {activeTab === "Overview" && (
         <ProjectOverview project={project} projectId={id} can={can} />
       )}
+      {activeTab === "Schedule" && <ProjectScheduleTab projectId={id} />}
     </div>
   );
 }
