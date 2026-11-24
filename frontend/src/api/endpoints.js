@@ -124,6 +124,14 @@ export const clientsApi = {
     api.patch(`/v1/clients/${id}`, payload).then((r) => unwrap(r)),
   remove: (id) => api.delete(`/v1/clients/${id}`).then((r) => unwrap(r)),
 };
+export const tasksApi = {
+  list: (params, signal) => api.get("/v1/tasks", { params, signal }).then((r) => r.data),
+  projectList: (id, params, signal) =>
+    api.get(`/v1/projects/${id}/tasks`, { params, signal }).then((r) => r.data),
+  create: (id, payload) =>
+    api.post(`/v1/projects/${id}/tasks`, payload).then((r) => unwrap(r)),
+};
+
 export const projectsApi = {
   list: (params, signal) => api.get("/v1/projects", { params, signal }).then((r) => r.data),
   archived: (params) =>

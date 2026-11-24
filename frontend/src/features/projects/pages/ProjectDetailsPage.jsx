@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { PageHeader, SectionCard } from "../../../components/ui/AppUI";
 import {
@@ -24,10 +24,12 @@ import {
 } from "../../daily-reports/utils/reportFormatters";
 import { useSitePhotos } from "../../site-photos/hooks/useSitePhotos";
 import SitePhotoCard from "../../site-photos/components/SitePhotoCard";
+import TasksList from "../../tasks/components/TasksList";
 
 export default function ProjectDetailsPage() {
   const { id } = useParams();
   const { can } = useAuth();
+  const tabId = useId();
   const [tab, setTab] = useState("Overview");
   const query = useProject(id);
   if (query.isLoading) return <div role="status">Loading project…</div>;
@@ -44,7 +46,9 @@ export default function ProjectDetailsPage() {
     );
   const project = query.data;
   const canViewSchedule = can("projects.view");
-  const activeTab = tab === "Schedule" && !canViewSchedule ? "Overview" : tab;
+  const tabs = canViewSchedule ? ["Overview", "Team", "Schedule"] : ["Overview", "Team"];
+  if (canViewSchedule && can("tasks.view")) tabs.push("Tasks");
+  const activeTab = tabs.includes(tab) ? tab : "Overview";
 
   return (
     <div className="phase2-page">
@@ -66,24 +70,38 @@ export default function ProjectDetailsPage() {
       />
       <div style={{ marginBottom: "10px" }}>
         <TabNavigation
-          items={canViewSchedule ? ["Overview", "Team", "Schedule"] : ["Overview", "Team"]}
+          items={tabs}
+          idPrefix={tabId}
+          label="Project details"
           active={activeTab}
           onChange={setTab}
         />
       </div>
 
-      {activeTab === "Team" && (
-        <SectionCard title="Project team">
-          <ProjectTeamManager
-            projectId={id}
-            canManage={can("projects.assign")}
-          />
-        </SectionCard>
-      )}
-      {activeTab === "Overview" && (
-        <ProjectOverview project={project} projectId={id} can={can} />
-      )}
-      {activeTab === "Schedule" && <ProjectScheduleTab projectId={id} />}
+      {tabs.map((item) => (
+        <div
+          key={item}
+          id={`${tabId}-panel-${item}`}
+          role="tabpanel"
+          aria-labelledby={`${tabId}-tab-${item}`}
+          tabIndex={0}
+          hidden={activeTab !== item}
+        >
+          {activeTab === item && (
+            item === "Team" ? (
+              <SectionCard title="Project team">
+                <ProjectTeamManager projectId={id} canManage={can("projects.assign")} />
+              </SectionCard>
+            ) : item === "Schedule" ? (
+              <ProjectScheduleTab projectId={id} />
+            ) : item === "Tasks" ? (
+              <TasksList projectId={id} projectName={project.name} />
+            ) : (
+              <ProjectOverview project={project} projectId={id} can={can} />
+            )
+          )}
+        </div>
+      ))}
     </div>
   );
 }

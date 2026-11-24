@@ -119,14 +119,30 @@ export const StatCard = ({ label, value }) => (
     <strong>{value}</strong>
   </section>
 );
-export const TabNavigation = ({ items, active, onChange }) => (
-  <div className="tabs" role="tablist">
+export const TabNavigation = ({ items, active, onChange, idPrefix, label }) => (
+  <div className="tabs" role="tablist" aria-label={label}>
     {items.map((x) => (
       <button
         type="button"
         role="tab"
+        id={`${idPrefix}-tab-${x}`}
+        aria-controls={`${idPrefix}-panel-${x}`}
         aria-selected={x === active}
+        tabIndex={x === active ? 0 : -1}
         onClick={() => onChange(x)}
+        onKeyDown={(event) => {
+          const index = items.indexOf(x);
+          const target = {
+            ArrowLeft: (index + items.length - 1) % items.length,
+            ArrowRight: (index + 1) % items.length,
+            Home: 0,
+            End: items.length - 1,
+          }[event.key];
+          if (target === undefined) return;
+          event.preventDefault();
+          event.currentTarget.parentElement.children[target]?.focus();
+          onChange(items[target]);
+        }}
         key={x}
       >
         {x}

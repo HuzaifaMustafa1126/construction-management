@@ -30,8 +30,8 @@ export function useProjects(params, options = {}) {
   const archived = options.archived === true;
   return useQuery({
     queryKey: archived ? keys.archived(params) : keys.list(params),
-    queryFn: () =>
-      archived ? projectsApi.archived(params) : projectsApi.list(params),
+    queryFn: ({ signal }) =>
+      archived ? projectsApi.archived(params) : projectsApi.list(params, signal),
     enabled: options.enabled ?? true,
   });
 }

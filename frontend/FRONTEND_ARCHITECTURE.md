@@ -35,6 +35,22 @@ Daily report query keys include company/user identity and project scope. The das
 
 Site photo query keys likewise include company, user, and project identity. `/site-photos`, `/site-photos/upload`, and `/site-photos/:id` are lazy workspace routes. Private image bytes are requested through Laravel's authenticated file endpoint, converted to short-lived object URLs, and revoked on replacement/unmount. Project and report integrations query only their nested photo resources.
 
+## Project Schedule
+
+Schedule mounts only when selected on the existing Project Detail route. Overview remains the initial tab. Project Detail links its tabs and panels and supports Left/Right, Home and End without changing the shared tab styling. Schedule keeps project phase progress read-only and supports phase CRUD, defaults and reorder, plus milestone CRUD and status changes.
+
+Keys extend the existing `["projects", companyId, userId]` root with `["phases", String(projectId)]`, `["milestones", String(projectId), "list"]`, or `["milestones", String(projectId), "detail", String(milestoneId)]`. Schedule resets its form and draft state when project, identity, or edit permission changes. Phase mutations invalidate the exact phase list. Milestone mutations invalidate project milestone lists and mark updated detail stale or remove deleted detail. Opening an editor loads current detail. Edits do not invalidate dashboard or project progress caches.
+
+The existing container breakpoint stacks the cards at smaller content widths. Schedule reuses shared controls and modal focus handling, with semantic colors and wrapping actions. Rendered verification at 1440, 1024, 768, 390 and 360px, including themes, focus and authenticated mutations, requires an authenticated browser session. Phase reorder has no server-side version check.
+
+The S4.10.6 production build reports the size warning on the shared application entry chunk at roughly 501 kB minified. The entry includes shared dependencies such as Zod, Axios, React Hook Form, React DOM and TanStack Query. Project Detail remains a separate lazy chunk.
+
+## Tasks lists
+
+The lazy `/tasks` workspace page and the Tasks tab on `/projects/:id` use the same read-only list and require `tasks.view`. The project tab mounts on selection and remains subject to project visibility. Task list query keys include company ID, user ID, global or project scope, and normalized API parameters. The list uses shared filters, badges, table, and server pagination patterns. It resolves phase and team names for at most one project at a time.
+
+Both Tasks views open the same create modal. The global view reuses the server-backed project picker and the project tab locks the project context. Creation refreshes the current identity's global and affected project task lists and project progress queries. Modal relationship lookups stay scoped to the selected project.
+
 ## Legacy boundary
 
 Materials use lazy catalog and project-inventory routes. Their query keys include company/user identity plus project and inventory scope; Laravel ledger balances remain authoritative.

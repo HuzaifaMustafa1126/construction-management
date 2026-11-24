@@ -23,6 +23,12 @@ export const companyNavigation = [
         mobile: true,
       },
       {
+        label: "Tasks",
+        route: "/tasks",
+        icon: "reports",
+        permission: "tasks.view",
+      },
+      {
         label: "Clients",
         route: "/clients",
         icon: "users",

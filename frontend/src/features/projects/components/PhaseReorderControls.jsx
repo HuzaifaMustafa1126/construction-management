@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiMessage } from "../../../api/endpoints";
 import { AppButton } from "../../../components/ui/AppUI";
 import { AppAlert } from "../../../components/ui/Controls";
@@ -19,6 +19,10 @@ export default function PhaseReorderControls({ projectId, query, onCancel, onSav
   const [requiresReload, setRequiresReload] = useState(false);
   const [busyAction, setBusyAction] = useState(null);
   const running = useRef(false);
+  const editor = useRef(null);
+  useEffect(() => {
+    editor.current?.querySelector("button:not(:disabled)")?.focus();
+  }, []);
   const current = Array.isArray(query.data) ? query.data : [];
   const baselineIds = phaseIds(baseline);
   const stale = requiresReload || !sameOrder(baselineIds, phaseIds(current));
@@ -86,7 +90,7 @@ export default function PhaseReorderControls({ projectId, query, onCancel, onSav
   };
 
   return (
-    <div className="schedule-phase-editor">
+    <div className="schedule-phase-editor" ref={editor}>
       {(error || stale) && <AppAlert tone="danger">{error || staleMessage}</AppAlert>}
       <ol className="schedule-phase-list" role="list">
         {draft.map((id, index) => (

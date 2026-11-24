@@ -1,0 +1,13 @@
+.task-form-modal {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior: contain;
+}
+
+.task-form-modal::-webkit-scrollbar {
+  display: none;
+}
+
+body:has(.task-form-modal) {
+  overflow: hidden;
+}

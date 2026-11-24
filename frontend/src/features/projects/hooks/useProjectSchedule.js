@@ -6,19 +6,29 @@ import { useProjectKeys } from "./useProjects";
 const phaseListKey = (root, projectId) => [...root, "phases", String(projectId)];
 const milestoneKey = (root, projectId) => [...root, "milestones", String(projectId)];
 
-export function useProjectSchedule(projectId) {
+export function useProjectPhases(projectId) {
   const { user, can } = useAuth();
   const { root } = useProjectKeys();
   const enabled = Boolean(
     projectId && user?.company?.id && user?.id && can("projects.view"),
   );
 
-  const phases = useQuery({
+  return useQuery({
     queryKey: phaseListKey(root, projectId),
     queryFn: ({ signal }) => projectsApi.phases(projectId, signal),
     enabled,
     retry: false,
+    networkMode: "always",
   });
+}
+
+export function useProjectSchedule(projectId) {
+  const phases = useProjectPhases(projectId);
+  const { user, can } = useAuth();
+  const { root } = useProjectKeys();
+  const enabled = Boolean(
+    projectId && user?.company?.id && user?.id && can("projects.view"),
+  );
   const milestones = useQuery({
     queryKey: [...milestoneKey(root, projectId), "list"],
     queryFn: ({ signal }) => projectsApi.milestones(projectId, signal),
@@ -29,12 +39,12 @@ export function useProjectSchedule(projectId) {
   return { phases, milestones };
 }
 
-function useProjectPhaseMutation(projectId, mutatePhase, options) {
+function useProjectPhaseMutation(projectId, mutatePhase) {
   const { root } = useProjectKeys();
   const client = useQueryClient();
 
   return useMutation({
-    ...options,
+    networkMode: "always",
     mutationFn: (variables) => mutatePhase(projectId, variables),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: phaseListKey(root, projectId), exact: true }),
@@ -56,11 +66,11 @@ export function useDeleteProjectPhase(projectId) {
 }
 
 export function useApplyDefaultProjectPhases(projectId) {
-  return useProjectPhaseMutation(projectId, projectsApi.applyDefaultPhases, { networkMode: "always" });
+  return useProjectPhaseMutation(projectId, projectsApi.applyDefaultPhases);
 }
 
 export function useReorderProjectPhases(projectId) {
-  return useProjectPhaseMutation(projectId, projectsApi.reorderPhases, { networkMode: "always" });
+  return useProjectPhaseMutation(projectId, projectsApi.reorderPhases);
 }
 
 export function useProjectMilestone(projectId, milestoneId) {
@@ -72,6 +82,8 @@ export function useProjectMilestone(projectId, milestoneId) {
     enabled: Boolean(projectId && milestoneId && user?.company?.id && user?.id && can("projects.view")),
     retry: false,
     staleTime: 0,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
 
@@ -91,7 +103,7 @@ export function useProjectMilestoneMutations(projectId) {
     mutationFn: ({ id, payload }) => projectsApi.updateMilestone(projectId, id, payload),
     onSuccess: (_, { id }) => Promise.all([
       refreshLists(),
-      client.invalidateQueries({ queryKey: [...key, "detail", String(id)], exact: true }),
+      client.invalidateQueries({ queryKey: [...key, "detail", String(id)], exact: true, refetchType: "none" }),
     ]),
   });
   const remove = useMutation({

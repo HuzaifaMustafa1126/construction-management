@@ -112,7 +112,8 @@
 }
 
 .schedule-delete-message,
-.schedule-milestone-confirm {
+.schedule-milestone-confirm,
+.schedule-milestone-form {
   overflow-wrap: anywhere;
 }
 

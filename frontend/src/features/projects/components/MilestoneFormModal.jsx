@@ -20,7 +20,9 @@ export default function MilestoneFormModal({ projectId, milestoneId, statusOnly,
 
   return (
     <AppModal open title={title} onClose={dismiss}>
-      {milestoneId && (detail.isPending || (!detail.isFetchedAfterMount && detail.isFetching)) ? (
+      {milestoneId && !detail.isFetchedAfterMount && detail.isPaused ? (
+        <AppAlert tone="danger">Reconnect to load the current milestone.</AppAlert>
+      ) : milestoneId && (detail.isPending || (!detail.isFetchedAfterMount && detail.isFetching)) ? (
         <p role="status">Loading milestone…</p>
       ) : milestoneId && detail.isError ? (
         <AppAlert tone="danger">{apiMessage(detail.error, "The milestone could not be loaded.")}</AppAlert>
@@ -81,7 +83,7 @@ function MilestoneForm({ milestone, statusOnly, phases, saving, onSave, onClose,
   });
 
   return (
-    <form className="form-grid" noValidate onSubmit={submit}>
+    <form className="form-grid schedule-milestone-form" noValidate onSubmit={submit}>
       {errors.root && <div className="full"><AppAlert tone="danger">{errors.root.message}</AppAlert></div>}
       {statusOnly ? (
         <p className="full">{milestone?.name}</p>

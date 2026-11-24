@@ -55,7 +55,7 @@ export const AppSelect = forwardRef(function AppSelect({ label, error, descripti
     </label>
   );
 });
-export function AppModal({ open, title, onClose, children }) {
+export function AppModal({ open, title, onClose, children, className = "" }) {
   const dialogRef = useRef(null);
   const onCloseRef = useRef(onClose);
   const titleId = useId();
@@ -106,7 +106,7 @@ export function AppModal({ open, title, onClose, children }) {
     <ModalScope.Provider value={dialogRef}>
       <div className="app-modal-backdrop" role="presentation"
         onMouseDown={(event) => event.target === event.currentTarget && topModal() === dialogRef.current && onCloseRef.current()}>
-        <section ref={dialogRef} tabIndex={-1} className="app-modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+        <section ref={dialogRef} tabIndex={-1} className={`app-modal ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby={titleId}>
           <header>
             <h2 id={titleId}>{title}</h2>
             <button className="icon-button" type="button" onClick={onClose} aria-label="Close"><AppIcon name="close" /></button>

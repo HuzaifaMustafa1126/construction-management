@@ -175,6 +175,26 @@ All project routes require an authenticated operational company context. Listing
 
 Statuses are `planning`, `active`, `on_hold`, `completed`, and `cancelled`. Allowed transitions are planning→active/cancelled, active→on_hold/completed/cancelled, and on_hold→active/cancelled. Completed and cancelled are terminal. Generic create/update forms prohibit `company_id`, currency, ownership/audit fields, status, progress, members, and team.
 
+## Project Schedule
+
+All Schedule paths are nested under `/projects/{projectId}` in `/api/v1`. Reads require `projects.view` and project visibility. Mutations require `projects.edit` and Laravel's project update policy. The authenticated Axios client unwraps Laravel's `data` envelope and forwards cancellation signals on reads.
+
+| Resource | Methods and suffixes | Contract |
+|---|---|---|
+| Phases | GET/POST `/phases`, PATCH/DELETE `/phases/{phaseId}` | List uses server sequence. Create/update accept name, description, dates and status. Sequence and progress are server-owned. |
+| Defaults and order | POST `/phases/apply-defaults`, PATCH `/phases/reorder` | Defaults add ten server-defined phases to an empty project. Reorder sends every current ID once in `{phase_ids: [...]}`. Both return ordered collections. |
+| Milestones | GET/POST `/milestones`, GET/PATCH/DELETE `/milestones/{milestoneId}` | List uses server due-date order. A null `phase_id` clears association. Completing without a date uses Laravel's default, and reopening clears the date. |
+
+Creates and defaults return 201, reads and updates return 200, and deletes return 204 with an empty body. Expired sessions use the shared 401 handling. Denied or inaccessible resources return 403 or 404. Dependency and duplicate-default conflicts return 409. Laravel 422 field errors appear in the relevant form. Reorder refetches before saving and rejects an observed stale draft. The API has no order version, so a same-membership reorder between that read and the write remains possible.
+
+## Tasks lists
+
+`GET /api/v1/tasks` returns the caller's visible tasks. `GET /api/v1/projects/{id}/tasks` scopes the same list to a visible project. Both require `tasks.view` and return `{ data, links, meta }`. The frontend sends `search`, `status`, `priority`, inclusive due-date bounds `date_from` and `date_to`, and `page`, `per_page`, `sort`, and `direction`. It sends `project_id` only on the global list. The list defaults to 15 rows sorted by position ascending. Supported frontend sort fields are `position`, `due_date`, `start_date`, `created_at`, and `title`.
+
+The task resource returns relationship IDs. The frontend resolves phase and assignee names through authorized project-scoped lookups when a project is known and uses ID labels where a name is unavailable. Both task reads pass TanStack Query's cancellation signal to the shared Axios client.
+
+`POST /api/v1/projects/{id}/tasks` returns 201 with `{ data: task }`. Laravel checks `tasks.create` and project update access, plus `tasks.assign` for a non-null assignee and `tasks.complete` for a non-`todo` initial status. The client omits assignment and status keys when their permissions are absent. Laravel owns completion progress and timestamps, project and company scope, and initial position.
+
 ## Daily site reports
 
 Report details, mutations and workflows remain project-nested and tenant-scoped. The read-only GET /daily-reports collection supports reports across accessible projects without project fan-out. The caller needs daily_reports.view; non-administrators only see assigned projects and clients receive only approved, client-visible reports. No aggregate totals are derived from paginated report rows.

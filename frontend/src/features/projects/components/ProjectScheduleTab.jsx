@@ -151,6 +151,8 @@ function ProjectScheduleContent({ projectId, canEdit }) {
   const [phaseNotice, setPhaseNotice] = useState(null);
   const deleting = useRef(false);
   const applyingDefaults = useRef(false);
+  const scheduleRegion = useRef(null);
+  const focusSchedule = () => requestAnimationFrame(() => scheduleRegion.current?.focus());
   const loadedPhases = phases.isSuccess && Array.isArray(phases.data);
   const availablePhases = loadedPhases ? phases.data : [];
   const phaseNames = new Map(
@@ -170,6 +172,7 @@ function ProjectScheduleContent({ projectId, canEdit }) {
     try {
       await deletePhase.mutateAsync(phaseToDelete.id);
       setPhaseToDelete(null);
+      focusSchedule();
     } catch {
       // The mutation error is rendered in the confirmation dialog.
     } finally {
@@ -183,11 +186,13 @@ function ProjectScheduleContent({ projectId, canEdit }) {
     try {
       await defaults.mutateAsync();
       setConfirmDefaults(false);
+      focusSchedule();
       setPhaseNotice({ tone: "success", message: "Default phases added." });
     } catch (error) {
       if (error?.status === 409) {
         await phases.refetch();
         setConfirmDefaults(false);
+        focusSchedule();
         setPhaseNotice({ tone: "danger", message: "This project already contains phases." });
       }
     } finally {
@@ -201,6 +206,7 @@ function ProjectScheduleContent({ projectId, canEdit }) {
     try {
       await milestoneMutations.remove.mutateAsync(milestoneToDelete.id);
       setMilestoneToDelete(null);
+      focusSchedule();
     } catch {
       // Keep the dialog open and display the mutation error.
     } finally {
@@ -209,7 +215,7 @@ function ProjectScheduleContent({ projectId, canEdit }) {
   };
 
   return (
-    <div className="project-schedule">
+    <div className="project-schedule" ref={scheduleRegion} role="region" aria-label="Project schedule" tabIndex={-1}>
       <div className="project-schedule-sections">
         <SectionCard
           title="Project phases"
@@ -243,9 +249,13 @@ function ProjectScheduleContent({ projectId, canEdit }) {
             <PhaseReorderControls
               projectId={projectId}
               query={phases}
-              onCancel={() => setReordering(false)}
+              onCancel={() => {
+                setReordering(false);
+                focusSchedule();
+              }}
               onSaved={() => {
                 setReordering(false);
+                focusSchedule();
                 setPhaseNotice({ tone: "success", message: "Phase order saved." });
               }}
             />

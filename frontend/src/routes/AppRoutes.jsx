@@ -60,6 +60,7 @@ const CreateProjectPage = lazy(() => import("../features/projects/pages/CreatePr
 const ProjectDetailsPage = lazy(() => import("../features/projects/pages/ProjectDetailsPage"));
 const EditProjectPage = lazy(() => import("../features/projects/pages/EditProjectPage"));
 const DailyReportsPage = lazy(() => import("../features/daily-reports/pages/DailyReportsPage"));
+const TasksPage = lazy(() => import("../features/tasks/pages/TasksPage"));
 const CreateDailyReportPage = lazy(() => import("../features/daily-reports/pages/CreateDailyReportPage"));
 const DailyReportDetailsPage = lazy(() => import("../features/daily-reports/pages/DailyReportDetailsPage"));
 const EditDailyReportPage = lazy(() => import("../features/daily-reports/pages/EditDailyReportPage"));
@@ -172,6 +173,11 @@ export default function AppRoutes() {
           <Route element={<WorkspaceLayout />}>
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/projects/:id" element={<ProjectDetailsPage />} />
+          </Route>
+        </Route>
+        <Route element={<ProtectedRoute permission="tasks.view" />}>
+          <Route element={<WorkspaceLayout />}>
+            <Route path="/tasks" element={<TasksPage />} />
           </Route>
         </Route>
         <Route element={<ProtectedRoute permission="clients.view" />}>
