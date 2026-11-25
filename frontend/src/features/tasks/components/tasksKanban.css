@@ -1,0 +1,76 @@
+.tasks-kanban {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(16rem, 1fr));
+  align-items: start;
+  gap: var(--space-3);
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+.tasks-kanban-column {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-section);
+  background: var(--color-surface-muted);
+}
+
+.tasks-kanban-heading,
+.tasks-kanban-card-actions,
+.tasks-kanban-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.tasks-kanban-card-actions {
+  width: 100%;
+}
+
+.tasks-kanban-heading h3,
+.tasks-kanban-card h4,
+.tasks-kanban-card p,
+.tasks-kanban-card dl,
+.tasks-kanban-card dd {
+  margin: 0;
+}
+
+.tasks-kanban-cards {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tasks-kanban-card {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  overflow-wrap: anywhere;
+}
+
+.tasks-kanban-card dl > div {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--space-2);
+}
+
+.tasks-kanban-card dt,
+.tasks-kanban-heading span,
+.tasks-kanban-pagination > span {
+  color: var(--color-text-muted);
+}
+
+[data-density="compact"] .tasks-kanban-card {
+  padding: var(--space-2);
+}

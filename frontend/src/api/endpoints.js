@@ -130,6 +130,10 @@ export const tasksApi = {
     api.get(`/v1/projects/${id}/tasks`, { params, signal }).then((r) => r.data),
   create: (id, payload) =>
     api.post(`/v1/projects/${id}/tasks`, payload).then((r) => unwrap(r)),
+  get: (id, signal) => api.get(`/v1/tasks/${id}`, { signal }).then((r) => unwrap(r)),
+  update: (id, payload) => api.patch(`/v1/tasks/${id}`, payload).then((r) => unwrap(r)),
+  status: (id, status) => api.patch(`/v1/tasks/${id}/status`, { status }).then((r) => unwrap(r)),
+  remove: (id) => api.delete(`/v1/tasks/${id}`).then(() => undefined),
 };
 
 export const projectsApi = {

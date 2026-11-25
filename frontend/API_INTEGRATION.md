@@ -195,6 +195,12 @@ The task resource returns relationship IDs. The frontend resolves phase and assi
 
 `POST /api/v1/projects/{id}/tasks` returns 201 with `{ data: task }`. Laravel checks `tasks.create` and project update access, plus `tasks.assign` for a non-null assignee and `tasks.complete` for a non-`todo` initial status. The client omits assignment and status keys when their permissions are absent. Laravel owns completion progress and timestamps, project and company scope, and initial position.
 
+Task details use cancellable `GET /api/v1/tasks/{taskId}` and return `{ data: task }`. `PATCH /api/v1/tasks/{taskId}` sends changed fields only. Laravel checks `projects.edit` for general edits, `tasks.assign` when `assigned_to` is present (including null), and `tasks.complete` when `status` is present. All writes also require project update access. The standalone `PATCH /api/v1/tasks/{taskId}/status` accepts only status. Laravel sets completion progress and timestamp, and resets progress on reopening unless a generic edit supplies new progress. `DELETE /api/v1/tasks/{taskId}` soft-deletes and returns an empty 204.
+
+The backend also accepts `phase_id`, `milestone_id`, and `assigned_to` on list reads. The current frontend exposes none of those filters. Task details do not advertise per-project write capabilities. The frontend applies effective permission gates and handles Laravel's final project-level authorization response.
+
+Kanban uses the same GET endpoints with one fixed status and one page of 15 tasks per column. Each column shows its filtered total from `meta.total` and navigates independently using Laravel page metadata. Card status changes use the same status dialog and PATCH endpoint as List. Column membership, position, and completion progress come from refreshed server reads. The status endpoint has no optimistic version precondition.
+
 ## Daily site reports
 
 Report details, mutations and workflows remain project-nested and tenant-scoped. The read-only GET /daily-reports collection supports reports across accessible projects without project fan-out. The caller needs daily_reports.view; non-administrators only see assigned projects and clients receive only approved, client-visible reports. No aggregate totals are derived from paginated report rows.

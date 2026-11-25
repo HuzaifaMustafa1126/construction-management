@@ -2,13 +2,15 @@
 import { useEffect, useState } from "react";
 import { DataTable } from "../../../components/tables/DataTable";
 import { AppBadge, AppButton, EmptyState, SectionCard } from "../../../components/ui/AppUI";
-import { AppAlert } from "../../../components/ui/Controls";
+import { AppAlert, IconButton } from "../../../components/ui/Controls";
 import { useAuth } from "../../auth/context/AuthContext";
 import { useProjectPhases } from "../../projects/hooks/useProjectSchedule";
 import { useProjectTeam } from "../../projects/hooks/useProjects";
 import { useTasks } from "../hooks/useTasks";
 import TaskFilters from "./TaskFilters";
 import TaskFormModal from "./TaskFormModal";
+import TaskActionDialog from "./TaskActionDialog";
+import TasksKanbanBoard from "./TasksKanbanBoard";
 import { taskPriorities, taskStatuses } from "../taskLabels";
 import "./tasksList.css";
 
@@ -39,7 +41,11 @@ export default function TasksList({ projectId, projectName }) {
 function TaskCollection({ projectId, projectName, canLookup }) {
   const { can } = useAuth();
   const canCreate = can("tasks.create") && canLookup;
+  const canEdit = can("projects.edit");
+  const canChangeStatus = can("tasks.complete");
   const [creating, setCreating] = useState(false);
+  const [taskAction, setTaskAction] = useState(null);
+  const [view, setView] = useState("list");
   const [filters, setFilters] = useState(defaults);
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState("");
@@ -56,6 +62,66 @@ function TaskCollection({ projectId, projectName, canLookup }) {
       ? "The end date must be on or after the start date."
       : "";
   const debouncing = term !== search;
+  const { priority, date_from, date_to, sort, direction } = filters;
+  const boardFilters = { search, priority, date_from, date_to, sort, direction, project_id: selected?.value };
+  const boardKey = JSON.stringify([term, priority, date_from, date_to, sort, direction, selected?.value]);
+  const goToPage = (page) => setFilters((current) => ({ ...current, page }));
+  const isList = view === "list";
+  const rowActions = canEdit || canChangeStatus ? (row) => (
+    <div className="table-actions">
+      {canEdit && <IconButton type="button" icon="edit" label={`Edit ${row.title}`}
+        onClick={() => setTaskAction({ action: "edit", row })} />}
+      {canChangeStatus && <IconButton type="button" icon="check" label={`Change status for ${row.title}`}
+        onClick={() => setTaskAction({ action: "status", row })} />}
+      {canEdit && <IconButton type="button" icon="delete" className="icon-button tasks-list-delete"
+        label={`Delete ${row.title}`} onClick={() => setTaskAction({ action: "delete", row })} />}
+    </div>
+  ) : undefined;
+
+  return (
+    <SectionCard title={projectId ? "Project tasks" : "All tasks"}
+      action={<div className="button-group">
+        <div className="button-group" role="group" aria-label="Tasks view">
+          <AppButton type="button" variant={isList ? "primary" : "secondary"} aria-pressed={isList} onClick={() => setView("list")}>List</AppButton>
+          <AppButton type="button" variant={isList ? "secondary" : "primary"} aria-pressed={!isList} onClick={() => setView("kanban")}>Kanban</AppButton>
+        </div>
+        {isList && canCreate && <AppButton type="button" onClick={() => setCreating(true)}>New Task</AppButton>}
+      </div>}
+    >
+      {isList && canCreate && creating && (
+        <TaskFormModal projectId={projectId} projectName={projectName} initialProject={selected}
+          onClose={() => setCreating(false)} />
+      )}
+      {taskAction && (taskAction.action === "status" ? canChangeStatus : isList && canEdit) && (
+        <TaskActionDialog key={`${taskAction.action}:${taskAction.row.id}`} {...taskAction}
+          projectName={projectId ? projectName : String(taskAction.row.project_id) === selected?.value ? selected.label : undefined}
+          onClose={() => setTaskAction(null)} />
+      )}
+      <div className="tasks-list">
+        <TaskFilters
+          filters={filters}
+          onChange={(field, value) => setFilters((current) => ({ ...current, [field]: value, page: 1 }))}
+          canPickProject={canLookup && !projectId}
+          selected={selected}
+          onSelect={(project) => { setSelected(project); goToPage(1); }}
+          dateError={dateError}
+          showStatus={isList}
+        />
+        {isList ? (
+          <TaskTableResults projectId={projectId} projectName={projectName} canLookup={canLookup}
+            filters={filters} selected={selected} search={search} debouncing={debouncing}
+            dateError={dateError} goToPage={goToPage} rowActions={rowActions} />
+        ) : !dateError && (
+          <TasksKanbanBoard key={boardKey} projectId={projectId} selected={selected}
+            canLookup={canLookup} filters={boardFilters} debouncing={debouncing}
+            onChangeStatus={canChangeStatus ? (row) => setTaskAction({ action: "status", row }) : undefined} />
+        )}
+      </div>
+    </SectionCard>
+  );
+}
+
+function TaskTableResults({ projectId, projectName, canLookup, filters, selected, search, debouncing, dateError, goToPage, rowActions }) {
   const query = useTasks(projectId, {
     ...filters, search, project_id: selected?.value,
   }, !dateError && !debouncing);
@@ -70,7 +136,7 @@ function TaskCollection({ projectId, projectName, canLookup }) {
   const meta = query.data?.meta;
   const waiting = debouncing || query.isPending;
   const outOfRange = meta?.current_page > meta?.last_page;
-  const filtered = Boolean(search || selected || filters.status || filters.priority || dates.length);
+  const filtered = Boolean(search || selected || filters.status || filters.priority || filters.date_from || filters.date_to);
   const columns = [
     { accessorKey: "title", header: "Task", cell: ({ getValue }) => <strong>{getValue()}</strong> },
     { id: "project", header: "Project", cell: ({ row }) => {
@@ -101,62 +167,42 @@ function TaskCollection({ projectId, projectName, canLookup }) {
       </span>
     ) },
   ];
-  const goToPage = (page) => setFilters((current) => ({ ...current, page }));
   const errorMessage = {
     unauthenticated: "Your session has expired.",
     forbidden: "You do not have permission to view these tasks.",
     "not-found": "This project could not be found or is no longer accessible.",
     network: "Could not connect to the server.",
   }[query.error?.kind] || "Tasks could not be loaded.";
-
+  if (dateError) return null;
+  if (!debouncing && query.isError) return (
+    <AppAlert tone="danger">
+      {errorMessage} <AppButton variant="secondary" disabled={query.isFetching} onClick={() => query.refetch()}>Retry</AppButton>
+    </AppAlert>
+  );
   return (
-    <SectionCard title={projectId ? "Project tasks" : "All tasks"}
-      action={canCreate && <AppButton type="button" onClick={() => setCreating(true)}>New Task</AppButton>}
-    >
-      {canCreate && creating && (
-        <TaskFormModal projectId={projectId} projectName={projectName} initialProject={selected}
-          onClose={() => setCreating(false)} />
+    <>
+      {(waiting || query.isFetching) && (
+        <p role="status">{waiting && !filtered && filters.page === 1 ? "Loading tasks…" : "Updating task results…"}</p>
       )}
-      <div className="tasks-list">
-        <TaskFilters
-          filters={filters}
-          onChange={(field, value) => setFilters((current) => ({ ...current, [field]: value, page: 1 }))}
-          canPickProject={canLookup && !projectId}
-          selected={selected}
-          onSelect={(project) => { setSelected(project); goToPage(1); }}
-          dateError={dateError}
-        />
-        {dateError ? null : !debouncing && query.isError ? (
-          <AppAlert tone="danger">
-            {errorMessage} <AppButton variant="secondary" disabled={query.isFetching} onClick={() => query.refetch()}>Retry</AppButton>
-          </AppAlert>
-        ) : (
-          <>
-            {(waiting || query.isFetching) && (
-              <p role="status">{waiting && !filtered && filters.page === 1 ? "Loading tasks…" : "Updating task results…"}</p>
-            )}
-            {!waiting && !rows.length ? (
-              <EmptyState title={outOfRange ? "This page is no longer available." : filtered ? "No tasks match the selected filters." : "No tasks to display."} />
-            ) : !waiting && (
-              <div className="tasks-list-table" role="region" aria-label="Tasks table" tabIndex={0}>
-                <DataTable columns={columns} data={rows} searchable={false} sortable={false} paginated={false} />
-              </div>
-            )}
-            {!waiting && meta && (meta.total > 0 || outOfRange) && (
-              <nav className="table-pagination" aria-label="Tasks pagination">
-                <span aria-live="polite">{meta.total} tasks · {outOfRange ? "Page unavailable" : `Page ${meta.current_page} of ${meta.last_page}`}</span>
-                <div className="button-group">
-                  <AppButton variant="secondary" disabled={query.isFetching || meta.current_page <= 1}
-                    onClick={() => goToPage(Math.min(meta.current_page - 1, meta.last_page))}>Previous</AppButton>
-                  <AppButton variant="secondary" disabled={query.isFetching || meta.current_page >= meta.last_page}
-                    onClick={() => goToPage(meta.current_page + 1)}>Next</AppButton>
-                </div>
-              </nav>
-            )}
-          </>
-        )}
-      </div>
-    </SectionCard>
+      {!waiting && !rows.length ? (
+        <EmptyState title={outOfRange ? "This page is no longer available." : filtered ? "No tasks match the selected filters." : "No tasks to display."} />
+      ) : !waiting && (
+        <div className="tasks-list-table" role="region" aria-label="Tasks table" tabIndex={0}>
+          <DataTable columns={columns} data={rows} actions={rowActions} searchable={false} sortable={false} paginated={false} />
+        </div>
+      )}
+      {!waiting && meta && (meta.total > 0 || outOfRange) && (
+        <nav className="table-pagination" aria-label="Tasks pagination">
+          <span aria-live="polite">{meta.total} tasks · {outOfRange ? "Page unavailable" : `Page ${meta.current_page} of ${meta.last_page}`}</span>
+          <div className="button-group">
+            <AppButton variant="secondary" disabled={query.isFetching || meta.current_page <= 1}
+              onClick={() => goToPage(Math.min(meta.current_page - 1, meta.last_page))}>Previous</AppButton>
+            <AppButton variant="secondary" disabled={query.isFetching || meta.current_page >= meta.last_page}
+              onClick={() => goToPage(meta.current_page + 1)}>Next</AppButton>
+          </div>
+        </nav>
+      )}
+    </>
   );
 }
 

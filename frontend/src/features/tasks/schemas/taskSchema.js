@@ -25,6 +25,7 @@ export const taskSchema = z.object({
   start_date: date,
   due_date: date,
   estimated_hours: optionalDecimal(999999.99),
+  actual_hours: optionalDecimal(999999.99).optional(),
   progress_percentage: optionalDecimal(100),
 }).refine(
   ({ start_date, due_date }) => !start_date || !due_date || due_date >= start_date,
@@ -48,4 +49,25 @@ export function createTaskPayload(values, { canAssign, canComplete }) {
     payload.progress_percentage = Number(values.progress_percentage);
   }
   return payload;
+}
+
+export function updateTaskPayload(values, original, dirtyFields, permissions) {
+  const payload = createTaskPayload(values, permissions);
+  if (permissions.canAssign) payload.assigned_to = values.assigned_to;
+  if (permissions.canComplete) payload.status = values.status;
+  if (values.status === "completed") delete payload.progress_percentage;
+  if (values.actual_hours !== undefined) {
+    payload.actual_hours = values.actual_hours === "" ? null : Number(values.actual_hours);
+  }
+
+  return Object.fromEntries(Object.entries(payload).filter(([field, value]) => {
+    if (!dirtyFields[field]) return false;
+    const previous = original[field];
+    if (field === "description") return (value?.trim() || null) !== (previous?.trim() || null);
+    if (field === "title") return value !== previous.trim();
+    if (field.endsWith("_id") || field === "assigned_to") {
+      return value !== (previous == null ? null : String(previous));
+    }
+    return value !== previous;
+  }));
 }

@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/context/AuthContext";
-import { createTask, listTasks } from "../api/tasksApi";
+import { createTask, deleteTask, getTask, listTasks, updateTask, updateTaskStatus } from "../api/tasksApi";
 import { useProjectKeys } from "../../projects/hooks/useProjects";
 
-export function useTasks(projectId, filters, enabled) {
+export function useTasks(projectId, filters, enabled, { refreshPage = false } = {}) {
   const { user, can } = useAuth();
   const params = {
     page: filters.page,
@@ -25,30 +25,70 @@ export function useTasks(projectId, filters, enabled) {
     enabled: Boolean(enabled && user?.company?.id && user?.id && can("tasks.view")),
     networkMode: "always",
     retry: false,
+    ...(refreshPage && { staleTime: 0 }),
   });
 }
 
-export function useCreateTask() {
+const detailKey = (user, taskId) => ["tasks", user?.company?.id, user?.id, "detail", String(taskId)];
+
+export function useTaskDetail(taskId) {
+  const { user, can } = useAuth();
+  return useQuery({
+    queryKey: detailKey(user, taskId),
+    queryFn: ({ signal }) => getTask(taskId, signal),
+    enabled: Boolean(taskId && user?.company?.id && user?.id && can("tasks.view")),
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    networkMode: "always",
+    retry: false,
+  });
+}
+
+function useTaskMutation(mutationFn, { remove = false } = {}) {
   const { user } = useAuth();
   const client = useQueryClient();
   const projects = useProjectKeys();
   return useMutation({
-    mutationFn: ({ projectId, payload }) => createTask(projectId, payload),
+    mutationFn,
     networkMode: "always",
     retry: false,
-    onSuccess: (_, { projectId }) => {
+    onSuccess: (_, { projectId, taskId, payload }) => {
       const id = String(projectId);
       const tasks = ["tasks", user.company.id, user.id, "list"];
       const dashboard = ["dashboard", user.company.id, user.id, "progress-preview"];
-      const keys = [
-        [...tasks, ["global"]], [...tasks, ["project", id]],
-        projects.detail(id), [...projects.root, "phases", id],
-        [...projects.root, "list"],
-        [...projects.root, "dashboard-active", id],
-        [...projects.root, "dashboard-active", "all"],
-        [...dashboard, id], [...dashboard, "all"],
-      ];
+      const keys = [[...tasks, ["global"]], [...tasks, ["project", id]]];
+      if (taskId) {
+        const queryKey = detailKey(user, taskId);
+        if (remove) client.removeQueries({ queryKey, exact: true });
+        else keys.push(queryKey);
+      }
+      if (!taskId || remove || ["phase_id", "status", "progress_percentage"].some((key) => Object.hasOwn(payload, key))) {
+        keys.push(
+          projects.detail(id), [...projects.root, "phases", id],
+          [...projects.root, "list"],
+          [...projects.root, "dashboard-active", id],
+          [...projects.root, "dashboard-active", "all"],
+          [...dashboard, id], [...dashboard, "all"],
+        );
+      }
       for (const queryKey of keys) void client.invalidateQueries({ queryKey });
     },
   });
+}
+
+export function useCreateTask() {
+  return useTaskMutation(({ projectId, payload }) => createTask(projectId, payload));
+}
+
+export function useUpdateTask() {
+  return useTaskMutation(({ taskId, payload }) => updateTask(taskId, payload));
+}
+
+export function useUpdateTaskStatus() {
+  return useTaskMutation(({ taskId, payload }) => updateTaskStatus(taskId, payload.status));
+}
+
+export function useDeleteTask() {
+  return useTaskMutation(({ taskId }) => deleteTask(taskId), { remove: true });
 }

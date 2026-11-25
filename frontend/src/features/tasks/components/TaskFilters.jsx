@@ -57,16 +57,16 @@ export function TaskProjectPicker({ selected, onSelect, required = false, error,
   );
 }
 
-export default function TaskFilters({ filters, onChange, canPickProject, selected, onSelect, dateError }) {
+export default function TaskFilters({ filters, onChange, canPickProject, selected, onSelect, dateError, showStatus = true }) {
   return (
     <FilterBar layout="grid">
       <AppInput label="Search tasks" type="search" value={filters.search} maxLength={255}
         onChange={(event) => onChange("search", event.target.value)} />
       {canPickProject && <TaskProjectPicker selected={selected} onSelect={onSelect} />}
-      <AppSelect label="Status" value={filters.status} onChange={(event) => onChange("status", event.target.value)}>
+      {showStatus && <AppSelect label="Status" value={filters.status} onChange={(event) => onChange("status", event.target.value)}>
         <option value="">All statuses</option>
         {Object.entries(taskStatuses).map(([value, [label]]) => <option key={value} value={value}>{label}</option>)}
-      </AppSelect>
+      </AppSelect>}
       <AppSelect label="Priority" value={filters.priority} onChange={(event) => onChange("priority", event.target.value)}>
         <option value="">All priorities</option>
         {Object.entries(taskPriorities).map(([value, [label]]) => <option key={value} value={value}>{label}</option>)}

@@ -47,9 +47,15 @@ The S4.10.6 production build reports the size warning on the shared application 
 
 ## Tasks lists
 
-The lazy `/tasks` workspace page and the Tasks tab on `/projects/:id` use the same read-only list and require `tasks.view`. The project tab mounts on selection and remains subject to project visibility. Task list query keys include company ID, user ID, global or project scope, and normalized API parameters. The list uses shared filters, badges, table, and server pagination patterns. It resolves phase and team names for at most one project at a time.
+The lazy `/tasks` workspace page and the Tasks tab on `/projects/:id` use the same list and require `tasks.view`. The project tab mounts on selection and remains subject to project visibility. Task list query keys include company ID, user ID, global or project scope, and normalized API parameters. The list uses shared filters, badges, table, and server pagination patterns. It resolves phase and team names for at most one project at a time.
 
 Both Tasks views open the same create modal. The global view reuses the server-backed project picker and the project tab locks the project context. Creation refreshes the current identity's global and affected project task lists and project progress queries. Modal relationship lookups stay scoped to the selected project.
+
+Edit and status dialogs fetch fresh, identity-scoped task details on demand. Editing reuses the create form with a fixed project. Row controls use effective permissions, with Laravel enforcing project-level write access. Successful mutations refresh the affected lists and detail, or remove detail after deletion. Changes that can affect progress also refresh the affected project's phase collection and progress views.
+
+S4.11.5 acceptance is partial pending authenticated browser checks. The Tasks table's labeled, focusable region owns horizontal scrolling. Create and Edit use scoped scrollbar hiding on the scrollable dialog, with native scrolling retained. Rendered checks at 1440, 1024, 768, 390 and 360 px, across both modes and all three accents, and live authorization and mutation round trips remain pending.
+
+The shared Tasks workspace defaults to List and offers a Kanban view. Both views reuse the same filters, except status selection stays with List. The active presentation owns its query subscriptions. Kanban mounts four status-scoped columns and resets their pages when its filters or project context change. It reuses the existing app theme and contains horizontal scrolling within the board. Card status actions reuse the List dialog and mutation. A successful move refreshes both columns through the existing identity-scoped task-list invalidation.
 
 ## Legacy boundary
 
