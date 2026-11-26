@@ -32,6 +32,14 @@
   width: 100%;
 }
 
+.tasks-kanban-card-actions .table-actions {
+  flex-wrap: wrap;
+}
+
+.tasks-kanban-card-actions .tasks-list-delete {
+  color: var(--color-danger);
+}
+
 .tasks-kanban-heading h3,
 .tasks-kanban-card h4,
 .tasks-kanban-card p,

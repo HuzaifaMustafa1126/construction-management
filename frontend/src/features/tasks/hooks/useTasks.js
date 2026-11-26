@@ -3,7 +3,7 @@ import { useAuth } from "../../auth/context/AuthContext";
 import { createTask, deleteTask, getTask, listTasks, updateTask, updateTaskStatus } from "../api/tasksApi";
 import { useProjectKeys } from "../../projects/hooks/useProjects";
 
-export function useTasks(projectId, filters, enabled, { refreshPage = false } = {}) {
+export function useTasks(projectId, filters, enabled) {
   const { user, can } = useAuth();
   const params = {
     page: filters.page,
@@ -25,7 +25,6 @@ export function useTasks(projectId, filters, enabled, { refreshPage = false } = 
     enabled: Boolean(enabled && user?.company?.id && user?.id && can("tasks.view")),
     networkMode: "always",
     retry: false,
-    ...(refreshPage && { staleTime: 0 }),
   });
 }
 

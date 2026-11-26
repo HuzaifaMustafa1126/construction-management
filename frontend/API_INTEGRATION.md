@@ -199,7 +199,9 @@ Task details use cancellable `GET /api/v1/tasks/{taskId}` and return `{ data: ta
 
 The backend also accepts `phase_id`, `milestone_id`, and `assigned_to` on list reads. The current frontend exposes none of those filters. Task details do not advertise per-project write capabilities. The frontend applies effective permission gates and handles Laravel's final project-level authorization response.
 
-Kanban uses the same GET endpoints with one fixed status and one page of 15 tasks per column. Each column shows its filtered total from `meta.total` and navigates independently using Laravel page metadata. Card status changes use the same status dialog and PATCH endpoint as List. Column membership, position, and completion progress come from refreshed server reads. The status endpoint has no optimistic version precondition.
+Kanban uses the same GET endpoints with one fixed status and one page of 15 tasks per column. Each column shows its filtered total from `meta.total` and navigates independently using Laravel page metadata. List and Kanban share task creation, detail, edit, delete, and status requests. Column membership, position, and completion progress come from refreshed server reads. The status endpoint has no optimistic version precondition.
+
+Columns refresh independently and can briefly reflect different server snapshots. The global board can mix tasks across authorized projects. Each board load uses at most four bounded column requests, and manual card reordering remains deferred.
 
 ## Daily site reports
 

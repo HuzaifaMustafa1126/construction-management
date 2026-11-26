@@ -1,9 +1,8 @@
 /* eslint-disable react/prop-types */
 import { AppBadge } from "../../../components/ui/AppUI";
-import { IconButton } from "../../../components/ui/Controls";
 import { taskPriorities } from "../taskLabels";
 
-export default function KanbanTaskCard({ task, projectId, selected, lookupId, assigneeNames, onChangeStatus }) {
+export default function KanbanTaskCard({ task, projectId, selected, lookupId, assigneeNames, renderActions }) {
   const rowProjectId = String(task.project_id);
   const projectName = rowProjectId === selected?.value ? selected.label : `Project #${rowProjectId}`;
   const assigneeName = rowProjectId === String(lookupId) && assigneeNames.get(String(task.assigned_to));
@@ -16,10 +15,7 @@ export default function KanbanTaskCard({ task, projectId, selected, lookupId, as
       {!projectId && <p>{projectName}</p>}
       <div className="tasks-kanban-card-actions">
         <AppBadge tone={tone}>{priority}</AppBadge>
-        {onChangeStatus && (
-          <IconButton type="button" icon="check" label={`Change status for ${task.title}`}
-            onClick={() => onChangeStatus(task)} />
-        )}
+        {(!projectId || String(projectId) === rowProjectId) && renderActions?.(task)}
       </div>
       <dl>
         <div><dt>Assigned to</dt><dd>{assignee}</dd></div>

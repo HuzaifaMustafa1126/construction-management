@@ -3,9 +3,14 @@ import { useProjectTeam } from "../../projects/hooks/useProjects";
 import KanbanColumn from "./KanbanColumn";
 import "./tasksKanban.css";
 
-const statuses = ["todo", "in_progress", "blocked", "completed"];
+const columns = [
+  ["todo", "To Do"],
+  ["in_progress", "In Progress"],
+  ["blocked", "Blocked"],
+  ["completed", "Completed"],
+];
 
-export default function TasksKanbanBoard({ projectId, selected, canLookup, filters, debouncing, onChangeStatus }) {
+export default function TasksKanbanBoard({ projectId, selected, canLookup, filters, debouncing, renderActions }) {
   const lookupId = canLookup ? projectId || selected?.value : undefined;
   const team = useProjectTeam(lookupId);
   const assigneeNames = new Map((team.isSuccess ? team.data : []).map(({ id, name }) => [String(id), name]));
@@ -13,10 +18,10 @@ export default function TasksKanbanBoard({ projectId, selected, canLookup, filte
 
   return (
     <div className="tasks-kanban" role="region" aria-label="Tasks Kanban board" tabIndex={0}>
-      {statuses.map((status) => (
-        <KanbanColumn key={status} status={status} projectId={projectId} selected={selected}
+      {columns.map(([status, title]) => (
+        <KanbanColumn key={status} status={status} title={title} projectId={projectId} selected={selected}
           lookupId={lookupId} assigneeNames={assigneeNames} filters={filters}
-          filtered={filtered} debouncing={debouncing} onChangeStatus={onChangeStatus} />
+          filtered={filtered} debouncing={debouncing} renderActions={renderActions} />
       ))}
     </div>
   );

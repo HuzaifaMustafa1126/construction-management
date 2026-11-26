@@ -85,14 +85,14 @@ function TaskCollection({ projectId, projectName, canLookup }) {
           <AppButton type="button" variant={isList ? "primary" : "secondary"} aria-pressed={isList} onClick={() => setView("list")}>List</AppButton>
           <AppButton type="button" variant={isList ? "secondary" : "primary"} aria-pressed={!isList} onClick={() => setView("kanban")}>Kanban</AppButton>
         </div>
-        {isList && canCreate && <AppButton type="button" onClick={() => setCreating(true)}>New Task</AppButton>}
+        {canCreate && <AppButton type="button" onClick={() => setCreating(true)}>New Task</AppButton>}
       </div>}
     >
-      {isList && canCreate && creating && (
+      {canCreate && creating && (
         <TaskFormModal projectId={projectId} projectName={projectName} initialProject={selected}
           onClose={() => setCreating(false)} />
       )}
-      {taskAction && (taskAction.action === "status" ? canChangeStatus : isList && canEdit) && (
+      {taskAction && (taskAction.action === "status" ? canChangeStatus : canEdit) && (
         <TaskActionDialog key={`${taskAction.action}:${taskAction.row.id}`} {...taskAction}
           projectName={projectId ? projectName : String(taskAction.row.project_id) === selected?.value ? selected.label : undefined}
           onClose={() => setTaskAction(null)} />
@@ -114,7 +114,7 @@ function TaskCollection({ projectId, projectName, canLookup }) {
         ) : !dateError && (
           <TasksKanbanBoard key={boardKey} projectId={projectId} selected={selected}
             canLookup={canLookup} filters={boardFilters} debouncing={debouncing}
-            onChangeStatus={canChangeStatus ? (row) => setTaskAction({ action: "status", row }) : undefined} />
+            renderActions={rowActions} />
         )}
       </div>
     </SectionCard>
