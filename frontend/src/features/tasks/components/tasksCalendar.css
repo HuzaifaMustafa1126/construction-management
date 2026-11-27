@@ -1,0 +1,229 @@
+.tasks-calendar {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  min-width: 0;
+  container-type: inline-size;
+}
+
+.tasks-calendar-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.tasks-calendar-toolbar h3,
+.tasks-calendar-summary p,
+.tasks-calendar-count {
+  margin: 0;
+}
+
+.tasks-calendar-summary,
+.tasks-calendar-count {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.tasks-calendar-content {
+  display: grid;
+  align-items: start;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.tasks-calendar-content > * {
+  min-width: 0;
+}
+
+.tasks-calendar-grid {
+  container: tasks-calendar-grid / inline-size;
+}
+
+.tasks-calendar-grid table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.tasks-calendar-grid th,
+.tasks-calendar-grid td {
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+
+.tasks-calendar-grid th {
+  background: var(--color-surface-muted);
+  font-size: var(--text-xs);
+  text-align: start;
+}
+
+.tasks-calendar-grid td {
+  height: 4rem;
+  vertical-align: top;
+  background: var(--color-surface);
+  font-size: var(--text-sm);
+}
+
+.tasks-calendar-grid .tasks-calendar-adjacent {
+  color: var(--color-text-muted);
+  background: var(--color-surface-muted);
+}
+
+.tasks-calendar-date {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-1);
+  width: 100%;
+  min-height: var(--control-height);
+  padding: var(--space-1);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.tasks-calendar-date[aria-pressed="true"] {
+  border-color: var(--color-accent-text);
+  background: var(--color-option-selected);
+}
+
+.tasks-calendar-date[aria-current="date"] time {
+  color: var(--color-accent-text);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.tasks-calendar-day {
+  overflow-wrap: anywhere;
+}
+
+.tasks-calendar-day h3,
+.tasks-calendar-day h4,
+.tasks-calendar-day p,
+.tasks-calendar-day dl,
+.tasks-calendar-day dd {
+  margin: 0;
+}
+
+.tasks-calendar-day-list {
+  display: grid;
+  gap: var(--space-2);
+  list-style: none;
+  padding: 0;
+  margin: var(--space-3) 0 0;
+}
+
+.tasks-calendar-day-list > li {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.tasks-calendar-day-list dl > div {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--space-2);
+}
+
+.tasks-calendar-day-list dt {
+  color: var(--color-text-muted);
+}
+
+.tasks-calendar-day-list .table-actions {
+  flex-wrap: wrap;
+}
+
+.tasks-calendar-day-list .tasks-list-delete {
+  color: var(--color-danger);
+}
+
+[data-density="compact"] .tasks-calendar-day-list {
+  gap: var(--space-1);
+}
+
+@container (min-width: 66rem) {
+  .tasks-calendar-content:has(.tasks-calendar-day) {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+  }
+}
+
+.tasks-calendar-grid [data-has-tasks] .tasks-calendar-count {
+  font-weight: 600;
+}
+
+.tasks-calendar-indicators {
+  display: grid;
+  gap: var(--space-1);
+  padding: 0;
+  margin: var(--space-1) 0 0;
+  list-style: none;
+}
+
+.tasks-calendar-indicators li {
+  padding: var(--space-1);
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+}
+
+.tasks-calendar-indicators li > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.tasks-calendar-indicators li > span {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+[data-density="compact"] .tasks-calendar-grid :is(th, td) {
+  padding: var(--space-1);
+}
+
+@container tasks-calendar-grid (max-width: 48rem) {
+  .tasks-calendar-indicators {
+    display: none;
+  }
+}
+
+@container tasks-calendar-grid (max-width: 28rem) {
+  .tasks-calendar-grid :is(th, td) {
+    padding: var(--space-1);
+  }
+
+  .tasks-calendar-grid th {
+    text-align: center;
+  }
+
+  .tasks-calendar-date {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding-inline: 0;
+  }
+
+  .tasks-calendar-count-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

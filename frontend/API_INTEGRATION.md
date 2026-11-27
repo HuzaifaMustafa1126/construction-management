@@ -203,6 +203,10 @@ Kanban uses the same GET endpoints with one fixed status and one page of 15 task
 
 Columns refresh independently and can briefly reflect different server snapshots. The global board can mix tasks across authorized projects. Each board load uses at most four bounded column requests, and manual card reordering remains deferred.
 
+Calendar uses the existing task GET endpoints with inclusive month bounds in `date_from` and `date_to`, ordered by due date ascending. It requests 100 rows per page, allows up to three pages on demand, and shows the unique loaded count against Laravel's `meta.total`. Month queries share the identity- and scope-specific task-list invalidation prefixes.
+
+Calendar actions reuse the existing task write endpoints and identity-scoped invalidation. Both old and new due-date contexts in scope are marked stale, and the active month refetches its loaded pages within the three-page limit. Calendar never changes task dates or progress locally.
+
 ## Daily site reports
 
 Report details, mutations and workflows remain project-nested and tenant-scoped. The read-only GET /daily-reports collection supports reports across accessible projects without project fan-out. The caller needs daily_reports.view; non-administrators only see assigned projects and clients receive only approved, client-visible reports. No aggregate totals are derived from paginated report rows.

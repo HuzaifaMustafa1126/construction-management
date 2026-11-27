@@ -61,6 +61,16 @@ S4.12.5 passed controlled live acceptance. Authenticated local Edge checks cover
 
 The isolated MariaDB run verified Create, changed-fields Edit, all four status transitions, and Delete with an empty 204 and detail-cache eviction. After reopening, a fresh response replaced invalidated page-two metadata and the column stayed on page two. A confirmed out-of-range page recovered to page one. The synthetic viewer's own-task write returned 403, cross-tenant requests returned 404, and signing out cleared writer task queries before the viewer signed in. The disposable schema was removed after verifying fixture ownership.
 
+The shared Tasks workspace also offers Calendar. Its Monday-first month grid places tasks by due date and uses the browser's local civil date for Today. Calendar preserves its month while switching views. List and Kanban retain their page state until the corresponding filters or scope change. Calendar shares search, project, status, and priority, with the month controlling the date bounds and due-date order.
+
+The Calendar keeps its selected date with the month in the shared workspace. Arrow keys move focus by day or week. Enter or Space selects a date, and crossing a month boundary gives the new month a valid default selection. The selected-day panel reads from the existing loaded month pages and shows incomplete counts explicitly. It may reuse an authorized team lookup for one known project.
+
+Calendar reuses the Tasks header's New Task action with an editable due date initialized to the selected day. The selected-day panel uses the same permission-gated edit, status, and delete actions as List and Kanban. The form and dialogs preserve month, selected day, and filters. If the triggering action disappears after refresh, focus returns to the selected-day heading.
+
+S4.13.5 Calendar passed controlled live acceptance. Authenticated Edge checks covered the global and project calendars at 1440, 1024, 768, 390 and 360 px across both themes, all three accents and both density settings. Month navigation, selected dates, task placement, filters, dialog dismissal and focus restoration were checked. An intentionally blocked month request showed an error and recovered through Retry.
+
+The isolated MariaDB run verified 300 of 301 matching tasks at the cap, a failed page-two request that retained the first 100 tasks, and deduplication after a live offset shift. Calendar Create returned 201, date moves and clears and completion/reopening returned 200, and Delete returned an empty 204 and evicted detail. Active Calendar invalidation refreshed exactly the three loaded pages. The viewer received 403 for its own denied write and 404 for cross-tenant access, with writer task queries cleared at sign-out. List and Kanban retained page two when switching views. The disposable schema was removed after verifying fixture ownership.
+
 ## Legacy boundary
 
 Materials use lazy catalog and project-inventory routes. Their query keys include company/user identity plus project and inventory scope; Laravel ledger balances remain authoritative.
